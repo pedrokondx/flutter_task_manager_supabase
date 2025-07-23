@@ -20,4 +20,9 @@ class AuthRemoteDataSourceImpl implements AuthDataSource {
   Future<void> logout() async {
     await supabase.auth.signOut();
   }
+
+  @override
+  Future<void> register(String email, String password) async {
+    await supabase.auth.signUp(email: email, password: password);
+  }
 }

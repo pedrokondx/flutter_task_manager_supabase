@@ -7,6 +7,7 @@ import 'package:supabase_todo/features/auth/domain/usecases/check_session_usecas
 import 'package:supabase_todo/features/auth/domain/usecases/login_usecase.dart';
 import 'package:supabase_todo/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:supabase_todo/features/auth/data/datasources/auth_datasource.dart';
+import 'package:supabase_todo/features/auth/domain/usecases/register_usecase.dart';
 
 final sl = GetIt.instance;
 
@@ -26,4 +27,5 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LoginUseCase(sl()));
   sl.registerLazySingleton(() => CheckSessionUseCase(sl()));
   sl.registerLazySingleton(() => LogoutUsecase(sl()));
+  sl.registerLazySingleton(() => RegisterUseCase(sl()));
 }

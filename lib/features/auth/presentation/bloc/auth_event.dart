@@ -12,6 +12,13 @@ class AuthLoginRequested extends AuthEvent {
   AuthLoginRequested(this.email, this.password);
 }
 
+class AuthRegisterRequested extends AuthEvent {
+  final String email;
+  final String password;
+
+  AuthRegisterRequested(this.email, this.password);
+}
+
 class AuthCheckSession extends AuthEvent {}
 
 class AuthLogoutRequested extends AuthEvent {}

@@ -7,8 +7,8 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatelessWidget {
+  const RegisterPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,13 +18,17 @@ class LoginPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login'),
+        title: const Text('Register'),
         centerTitle: true,
         backgroundColor: Colors.blueAccent,
       ),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Registration successful!')),
+            );
+
             context.go('/home');
           } else if (state is AuthError) {
             ScaffoldMessenger.of(
@@ -45,7 +49,7 @@ class LoginPage extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'Welcome back!',
+                    'Welcome!',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
@@ -74,9 +78,9 @@ class LoginPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   TextButton(
-                    onPressed: () => context.go('/register'),
+                    onPressed: () => context.go('/login'),
                     child: Text(
-                      'Don\'t have an account? Register here',
+                      'Already have an account? Login here',
                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                         color: Theme.of(context).colorScheme.primary,
                       ),
@@ -87,7 +91,7 @@ class LoginPage extends StatelessWidget {
                     onPressed: () {
                       if (formKey.currentState!.validate()) {
                         context.read<AuthBloc>().add(
-                          AuthLoginRequested(
+                          AuthRegisterRequested(
                             emailController.text,
                             passwordController.text,
                           ),
@@ -103,7 +107,10 @@ class LoginPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text('Login', style: TextStyle(fontSize: 16)),
+                    child: const Text(
+                      'Register',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
                 ],
               ),

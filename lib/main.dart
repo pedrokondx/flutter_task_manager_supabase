@@ -22,6 +22,7 @@ void main() async {
     loginUseCase: di.sl(),
     checkSessionUseCase: di.sl(),
     logoutUsecase: di.sl(),
+    registerUseCase: di.sl(),
   )..add(AuthCheckSession());
 
   AppRouter.init(authBloc);

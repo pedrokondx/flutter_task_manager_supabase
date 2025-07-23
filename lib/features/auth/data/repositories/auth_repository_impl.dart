@@ -7,13 +7,16 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this.remote);
 
   @override
-  Future<void> login(String email, String password) async {
-    return await remote.login(email, password);
-  }
+  Future<void> login(String email, String password) =>
+      remote.login(email, password);
 
   @override
   Future<bool> hasSession() => remote.hasSession();
 
   @override
   Future<void> logout() => remote.logout();
+
+  @override
+  Future<void> register(String email, String password) =>
+      remote.register(email, password);
 }

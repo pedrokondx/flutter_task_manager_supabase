@@ -18,9 +18,9 @@
 ## 📲 Required Features
 
 - [x] Login screen (e-mail + password)
-- [ ] Registration screen (e-mail + password)
+- [x] Registration screen (e-mail + password)
 - [x] Login persistence (user remains authenticated when reopening app)
-  - Test with prod app
+  - [ ] Test with prod app
 - [ ] Task list screen for authenticated user
 - [ ] Create new task (title, description, due date, category, and status)
 - [ ] Task statuses:
@@ -40,6 +40,8 @@
 - [ ] User logout
 - [ ] Show loading indicators and basic error messages
 - [ ] Simple and functional interface (Material)
+- [ ] Form validation for Login, Registration, Tasks, ETC
+- [ ] Ensure README states table schemas in supabase
 
 ## 📁 Mandatory Functionality and Organization
 
