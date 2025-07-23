@@ -1,3 +1,5 @@
+import 'package:supabase_todo/features/auth/domain/entities/user_entity.dart';
+
 import '../repositories/auth_repository.dart';
 
 class CheckSessionUseCase {
@@ -5,5 +7,5 @@ class CheckSessionUseCase {
 
   CheckSessionUseCase(this.repository);
 
-  Future<bool> call() => repository.hasSession();
+  Future<UserEntity?> call() => repository.hasSession();
 }

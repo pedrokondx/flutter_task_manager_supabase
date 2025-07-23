@@ -1,4 +1,5 @@
 import 'package:supabase_todo/features/auth/data/datasources/auth_datasource.dart';
+import 'package:supabase_todo/features/auth/domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -7,16 +8,23 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this.remote);
 
   @override
-  Future<void> login(String email, String password) =>
-      remote.login(email, password);
+  Future<UserEntity> login(String email, String password) async {
+    final dto = await remote.login(email, password);
+    return dto.toEntity();
+  }
 
   @override
-  Future<bool> hasSession() => remote.hasSession();
+  Future<UserEntity?> hasSession() async {
+    final dto = await remote.hasSession();
+    return dto?.toEntity();
+  }
 
   @override
   Future<void> logout() => remote.logout();
 
   @override
-  Future<void> register(String email, String password) =>
-      remote.register(email, password);
+  Future<UserEntity> register(String email, String password) async {
+    final dto = await remote.register(email, password);
+    return dto.toEntity();
+  }
 }

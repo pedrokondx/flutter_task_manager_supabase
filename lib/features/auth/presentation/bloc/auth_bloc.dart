@@ -31,8 +31,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoading());
     try {
-      await loginUseCase(event.email, event.password);
-      emit(AuthAuthenticated());
+      final user = await loginUseCase(event.email, event.password);
+      emit(AuthAuthenticated(user.id));
     } catch (e) {
       emit(AuthError('Failed to login - ${(e as AuthException).message}'));
     }
@@ -43,7 +43,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     final hasSession = await checkSessionUseCase();
-    emit(hasSession ? AuthAuthenticated() : AuthUnauthenticated());
+    emit(
+      hasSession != null
+          ? AuthAuthenticated(hasSession.id)
+          : AuthUnauthenticated(),
+    );
   }
 
   Future<void> _onLogout(
@@ -65,8 +69,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoading());
     try {
-      await registerUseCase(event.email, event.password);
-      emit(AuthAuthenticated());
+      final user = await registerUseCase(event.email, event.password);
+      emit(AuthAuthenticated(user.id));
     } catch (e) {
       emit(AuthError('Failed to register - ${(e as AuthException).message}'));
     }

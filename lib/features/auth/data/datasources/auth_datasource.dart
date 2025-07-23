@@ -1,6 +1,8 @@
+import 'package:supabase_todo/features/auth/data/dtos/user_dto.dart';
+
 abstract class AuthDataSource {
-  Future<void> login(String email, String password);
-  Future<bool> hasSession();
+  Future<UserDTO> login(String email, String password);
+  Future<UserDTO?> hasSession();
   Future<void> logout();
-  Future<void> register(String email, String password);
+  Future<UserDTO> register(String email, String password);
 }
