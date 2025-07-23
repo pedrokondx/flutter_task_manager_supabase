@@ -2,23 +2,25 @@
 
 ## 🔒 Important (Stacks and Requirements)
 
-- [ ] Use Supabase
+- [x] Use Supabase
+  - [ ] Check RLS for security
 - [ ] Users should be able to register
-- [ ] Users should be able to login
+- [x] Users should be able to login
 - [ ] Users should be able to CRUD their tasks (create, read, update, delete)
-- [ ] Use Supabase Auth for authentication
+- [x] Use Supabase Auth for authentication
 - [ ] All data should be stored in Supabase Postgres
-- [ ] Can be used Supabase SDK
-- [ ] Flutter ^3.29
-- [ ] Dart ^3.7
-- [ ] BLoC (Can be CUBIT)
-- [ ] These stacks CAN'T be changed, but new libs are allowed
+- [x] Can be used Supabase SDK
+- [x] Flutter ^3.29
+- [x] Dart ^3.7
+- [x] BLoC (Can be CUBIT)
+- [x] These stacks CAN'T be changed, but new libs are allowed
 
 ## 📲 Required Features
 
-- [ ] Login screen (e-mail + password)
+- [x] Login screen (e-mail + password)
 - [ ] Registration screen (e-mail + password)
-- [ ] Login persistence (user remains authenticated when reopening app)
+- [x] Login persistence (user remains authenticated when reopening app)
+  - Test with prod app
 - [ ] Task list screen for authenticated user
 - [ ] Create new task (title, description, due date, category, and status)
 - [ ] Task statuses:
@@ -38,12 +40,6 @@
 - [ ] User logout
 - [ ] Show loading indicators and basic error messages
 - [ ] Simple and functional interface (Material)
-
-## 🔗 Useful Links
-
-- [Supabase Auth](https://supabase.com/docs/guides/auth)
-- [Supabase Storage](https://supabase.com/docs/guides/storage)
-- [Supabase Postgres](https://supabase.com/docs/reference/dart/introduction)
 
 ## 📁 Mandatory Functionality and Organization
 
