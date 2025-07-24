@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_todo/core/theme/theme.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_event.dart';
+import 'package:supabase_todo/features/todo/presentation/bloc/task_bloc.dart';
 import 'core/di/injector.dart' as di;
 import 'core/router/router.dart';
 
@@ -37,8 +38,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: authBloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: authBloc),
+        BlocProvider(
+          create: (_) => TaskBloc(
+            getTasks: di.sl(),
+            createTask: di.sl(),
+            updateTask: di.sl(),
+            deleteTask: di.sl(),
+          ),
+        ),
+      ],
       child: MaterialApp.router(
         title: 'Supabase Todo',
         theme: AppTheme.light,

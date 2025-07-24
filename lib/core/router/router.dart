@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_todo/features/auth/presentation/pages/register_page.dart';
+import 'package:supabase_todo/features/todo/presentation/pages/task_list_page.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
-import '../../features/home/presentation/pages/home_page.dart';
 
 class AppRouter {
   static late final GoRouter router;
@@ -22,7 +22,7 @@ class AppRouter {
         // Redirect authenticated users away from login/splash to home
         if (authState is AuthAuthenticated &&
             (state.fullPath == '/login' || state.fullPath == '/')) {
-          return '/home';
+          return '/tasks';
         }
 
         // Redirect unauthenticated users trying to access protected routes (but allow register)
@@ -37,8 +37,17 @@ class AppRouter {
       routes: [
         GoRoute(path: '/', builder: (_, __) => const SplashPage()),
         GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
-        GoRoute(path: '/home', builder: (_, __) => const HomePage()),
         GoRoute(path: '/register', builder: (_, __) => const RegisterPage()),
+        GoRoute(
+          path: '/tasks',
+          builder: (context, state) {
+            final authState = authBloc.state;
+            if (authState is AuthAuthenticated) {
+              return TaskListPage(userId: authState.userId);
+            }
+            return const SplashPage();
+          },
+        ),
       ],
     );
   }

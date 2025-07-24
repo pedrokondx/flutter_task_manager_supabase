@@ -4,11 +4,11 @@
 
 - [x] Use Supabase
   - [ ] Check RLS for security
-- [ ] Users should be able to register
+- [x] Users should be able to register
 - [x] Users should be able to login
 - [ ] Users should be able to CRUD their tasks (create, read, update, delete)
 - [x] Use Supabase Auth for authentication
-- [ ] All data should be stored in Supabase Postgres
+- [x] All data should be stored in Supabase Postgres
 - [x] Can be used Supabase SDK
 - [x] Flutter ^3.29
 - [x] Dart ^3.7
@@ -21,23 +21,23 @@
 - [x] Registration screen (e-mail + password)
 - [x] Login persistence (user remains authenticated when reopening app)
   - [ ] Test with prod app
-- [ ] Task list screen for authenticated user
+- [x] Task list screen for authenticated user
 - [ ] Create new task (title, description, due date, category, and status)
-- [ ] Task statuses:
-  - [ ] To do
-  - [ ] In Progress
-  - [ ] Done
+- [x] Task statuses:
+  - [x] To do
+  - [x] In Progress
+  - [x] Done
 - [ ] Dynamic categories (user can create/edit/delete categories)
 - [ ] On task creation/editing, user can select a pre-created category
 - [ ] Add photos/videos to tasks (choose from files or record via camera)
 - [ ] Edit existing tasks
 - [ ] Delete tasks
-- [ ] Filter tasks via text field on task list screen based on:
-  - [ ] Title
-  - [ ] Description
+- [x] Filter tasks via text field on task list screen based on:
+  - [x] Title
+  - [x] Description
   - [ ] Category
   - [ ] Status
-- [ ] User logout
+- [x] User logout
 - [ ] Show loading indicators and basic error messages
 - [ ] Simple and functional interface (Material)
 - [ ] Form validation for Login, Registration, Tasks, ETC
