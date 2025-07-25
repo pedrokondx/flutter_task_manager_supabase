@@ -4,7 +4,7 @@ class DeleteTaskUsecase {
   final TaskRepository repository;
   DeleteTaskUsecase(this.repository);
 
-  Future<void> call(String taskId) {
-    return repository.deleteTask(taskId);
+  Future<void> call(String taskId, String userId) {
+    return repository.deleteTask(taskId, userId);
   }
 }

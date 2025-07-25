@@ -32,8 +32,9 @@ class UpdateTaskEvent extends TaskEvent {
 
 class DeleteTaskEvent extends TaskEvent {
   final String taskId;
-  DeleteTaskEvent(this.taskId);
+  final String userId;
+  DeleteTaskEvent(this.taskId, this.userId);
 
   @override
-  List<Object?> get props => [taskId];
+  List<Object?> get props => [taskId, userId];
 }

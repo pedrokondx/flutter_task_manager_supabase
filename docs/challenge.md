@@ -19,10 +19,19 @@
 
 - [x] Login screen (e-mail + password)
 - [x] Registration screen (e-mail + password)
+- [x] User logout
 - [x] Login persistence (user remains authenticated when reopening app)
   - [ ] Test with prod app
 - [x] Task list screen for authenticated user
-- [ ] Create new task (title, description, due date, category, and status)
+- [x] Filter tasks via text field on task list screen based on:
+  - [x] Title
+  - [x] Description
+  - [ ] Category
+  - [ ] Status
+- [x] Create new task (title, description, due date, category, and status)
+  - [ ] Create with category
+- [x] Edit existing tasks
+- [x] Delete tasks
 - [x] Task statuses:
   - [x] To do
   - [x] In Progress
@@ -30,17 +39,9 @@
 - [ ] Dynamic categories (user can create/edit/delete categories)
 - [ ] On task creation/editing, user can select a pre-created category
 - [ ] Add photos/videos to tasks (choose from files or record via camera)
-- [ ] Edit existing tasks
-- [ ] Delete tasks
-- [x] Filter tasks via text field on task list screen based on:
-  - [x] Title
-  - [x] Description
-  - [ ] Category
-  - [ ] Status
-- [x] User logout
 - [ ] Show loading indicators and basic error messages
-- [ ] Simple and functional interface (Material)
 - [ ] Form validation for Login, Registration, Tasks, ETC
+- [ ] Simple and functional interface (Material)
 - [ ] Ensure README states table schemas in supabase
 
 ## 📁 Mandatory Functionality and Organization

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_todo/features/todo/domain/usecases/create_task_usecase.dart';
 import 'package:supabase_todo/features/todo/domain/usecases/delete_task_usecase.dart';
 import 'package:supabase_todo/features/todo/domain/usecases/get_tasks_usecase.dart';
@@ -18,29 +19,81 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     required this.updateTask,
     required this.deleteTask,
   }) : super(TaskInitial()) {
-    on<LoadTasks>((event, emit) async {
-      emit(TaskLoading());
-      try {
-        final tasks = await getTasks(event.userId);
-        emit(TaskLoaded(tasks));
-      } catch (_) {
-        emit(TaskError('Failed to load tasks'));
-      }
-    });
+    on<LoadTasks>(_onLoadTasks);
+    on<CreateTaskEvent>(_onCreateTask);
+    on<UpdateTaskEvent>(_onUpdateTask);
+    on<DeleteTaskEvent>(_onDeleteTask);
+  }
 
-    on<CreateTaskEvent>((event, emit) async {
+  Future<void> _onLoadTasks(LoadTasks event, Emitter<TaskState> emit) async {
+    emit(TaskLoading());
+    try {
+      final tasks = await getTasks(event.userId);
+      emit(TaskLoaded(tasks));
+    } catch (e) {
+      String errorMessage = 'Failed to load tasks';
+      if (e is PostgrestException) {
+        errorMessage = 'Database error: ${e.message}';
+      } else if (e is Exception) {
+        errorMessage = 'Failed to load tasks: ${e.toString()}';
+      }
+      emit(TaskError(errorMessage));
+    }
+  }
+
+  Future<void> _onCreateTask(
+    CreateTaskEvent event,
+    Emitter<TaskState> emit,
+  ) async {
+    try {
       await createTask(event.task);
       add(LoadTasks(event.task.userId));
-    });
+    } catch (e) {
+      String errorMessage = 'Failed to create task';
+      if (e is PostgrestException) {
+        errorMessage = 'Database error: ${e.message}';
+      } else if (e is Exception) {
+        errorMessage = 'Failed to create task: ${e.toString()}';
+      }
+      emit(TaskError(errorMessage));
+    }
+  }
 
-    on<UpdateTaskEvent>((event, emit) async {
+  Future<void> _onUpdateTask(
+    UpdateTaskEvent event,
+    Emitter<TaskState> emit,
+  ) async {
+    try {
       await updateTask(event.task);
       add(LoadTasks(event.task.userId));
-    });
+    } catch (e) {
+      String errorMessage = 'Failed to update task';
+      if (e is PostgrestException) {
+        errorMessage = 'Database error: ${e.message}';
+      } else if (e is Exception) {
+        errorMessage = 'Failed to update task: ${e.toString()}';
+      }
 
-    on<DeleteTaskEvent>((event, emit) async {
-      await deleteTask(event.taskId);
-      // make reload
-    });
+      emit(TaskError(errorMessage));
+    }
+  }
+
+  Future<void> _onDeleteTask(
+    DeleteTaskEvent event,
+    Emitter<TaskState> emit,
+  ) async {
+    try {
+      await deleteTask(event.taskId, event.userId);
+      add(LoadTasks(event.userId));
+    } catch (e) {
+      String errorMessage = 'Failed to delete task';
+      if (e is PostgrestException) {
+        errorMessage = 'Database error: ${e.message}';
+      } else if (e is Exception) {
+        errorMessage = 'Failed to delete task: ${e.toString()}';
+      }
+
+      emit(TaskError(errorMessage));
+    }
   }
 }

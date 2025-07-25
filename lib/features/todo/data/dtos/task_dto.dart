@@ -25,20 +25,24 @@ class TaskDTO {
 
   factory TaskDTO.fromMap(Map<String, dynamic> map) {
     return TaskDTO(
-      id: map['id'],
-      userId: map['user_id'],
-      title: map['title'],
+      id: map['id'] ?? '',
+      userId: map['user_id'] ?? '',
+      title: map['title'] ?? '',
       description: map['description'],
       dueDate: map['due_date'] != null ? DateTime.parse(map['due_date']) : null,
       categoryId: map['category_id'],
-      status: map['status'],
-      createdAt: DateTime.parse(map['created_at']),
-      updatedAt: DateTime.parse(map['updated_at']),
+      status: map['status'] ?? 'to_do',
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'])
+          : DateTime.now(),
+      updatedAt: map['updated_at'] != null
+          ? DateTime.parse(map['updated_at'])
+          : DateTime.now(),
     );
   }
 
   Map<String, dynamic> toMap() {
-    return {
+    final map = <String, dynamic>{
       'id': id,
       'user_id': userId,
       'title': title,
@@ -46,9 +50,11 @@ class TaskDTO {
       'due_date': dueDate?.toIso8601String(),
       'category_id': categoryId,
       'status': status,
-      'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
     };
+
+    return map;
   }
 
   TaskEntity toEntity() => TaskEntity(
@@ -74,6 +80,7 @@ class TaskDTO {
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
   );
+
   TaskDTO copyWith({
     String? id,
     String? userId,

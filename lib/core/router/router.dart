@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_todo/features/auth/presentation/pages/register_page.dart';
+import 'package:supabase_todo/features/todo/domain/entities/task_entity.dart';
+import 'package:supabase_todo/features/todo/presentation/pages/task_form_page.dart';
 import 'package:supabase_todo/features/todo/presentation/pages/task_list_page.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
@@ -44,6 +46,17 @@ class AppRouter {
             final authState = authBloc.state;
             if (authState is AuthAuthenticated) {
               return TaskListPage(userId: authState.userId);
+            }
+            return const SplashPage();
+          },
+        ),
+        GoRoute(
+          path: '/tasks/form',
+          builder: (context, state) {
+            final authState = authBloc.state;
+            if (authState is AuthAuthenticated) {
+              final task = state.extra as TaskEntity?;
+              return TaskFormPage(userId: authState.userId, task: task);
             }
             return const SplashPage();
           },

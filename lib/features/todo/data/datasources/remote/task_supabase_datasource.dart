@@ -20,16 +20,37 @@ class TaskSupabaseDatasource implements TaskDatasource {
 
   @override
   Future<void> createTask(TaskDTO dto) async {
-    await supabase.from('tasks').insert(dto.toMap());
+    final taskData = dto.toMap();
+    taskData.remove('id');
+
+    await supabase.from('tasks').insert(taskData);
   }
 
   @override
   Future<void> updateTask(TaskDTO dto) async {
-    await supabase.from('tasks').update(dto.toMap()).eq('id', dto.id);
+    final response = await supabase
+        .from('tasks')
+        .update(dto.toMap())
+        .eq('id', dto.id)
+        .eq('user_id', dto.userId)
+        .select();
+
+    if (response.isEmpty) {
+      throw Exception('No task found with ID ${dto.id} for user ${dto.userId}');
+    }
   }
 
   @override
-  Future<void> deleteTask(String id) async {
-    await supabase.from('tasks').delete().eq('id', id);
+  Future<void> deleteTask(String id, String userId) async {
+    final response = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId)
+        .select();
+
+    if (response.isEmpty) {
+      throw Exception('No task found with ID $id for user $userId');
+    }
   }
 }

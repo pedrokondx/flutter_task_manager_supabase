@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_event.dart';
 import 'package:supabase_todo/features/todo/domain/entities/task_entity.dart';
@@ -26,6 +27,18 @@ class _TaskListPageState extends State<TaskListPage> {
   void initState() {
     super.initState();
     context.read<TaskBloc>().add(LoadTasks(widget.userId));
+  }
+
+  List<TaskEntity> _applyFilters(List<TaskEntity> tasks) {
+    return tasks.where((task) {
+      final matchesStatus =
+          selectedFilter == 'all' || task.status == selectedFilter;
+      final matchesText =
+          task.title.toLowerCase().contains(textFilter) ||
+          (task.description ?? '').toLowerCase().contains(textFilter);
+
+      return matchesStatus && matchesText;
+    }).toList();
   }
 
   @override
@@ -55,7 +68,9 @@ class _TaskListPageState extends State<TaskListPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         TaskHeader(
-                          onNewTask: () {},
+                          onNewTask: () {
+                            context.push('/tasks/form');
+                          },
                           onCategoryPressed: () {},
                           onLogoutPressed: () {
                             context.read<AuthBloc>().add(AuthLogoutRequested());
@@ -91,7 +106,10 @@ class _TaskListPageState extends State<TaskListPage> {
                             itemCount: tasks.length,
                             itemBuilder: (_, i) {
                               final task = tasks[i];
-                              return TaskCard(task: task);
+                              return TaskCard(
+                                task: task,
+                                userId: widget.userId,
+                              );
                             },
                           ),
                   ),
@@ -104,17 +122,5 @@ class _TaskListPageState extends State<TaskListPage> {
         ),
       ),
     );
-  }
-
-  List<TaskEntity> _applyFilters(List<TaskEntity> tasks) {
-    return tasks.where((task) {
-      final matchesStatus =
-          selectedFilter == 'all' || task.status == selectedFilter;
-      final matchesText =
-          task.title.toLowerCase().contains(textFilter) ||
-          (task.description ?? '').toLowerCase().contains(textFilter);
-
-      return matchesStatus && matchesText;
-    }).toList();
   }
 }

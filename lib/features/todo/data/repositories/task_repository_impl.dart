@@ -27,7 +27,7 @@ class TaskRepositoryImpl implements TaskRepository {
   }
 
   @override
-  Future<void> deleteTask(String taskId) {
-    return datasource.deleteTask(taskId);
+  Future<void> deleteTask(String taskId, String userId) {
+    return datasource.deleteTask(taskId, userId);
   }
 }
