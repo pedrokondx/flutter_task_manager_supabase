@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_todo/core/utils/snackbar_utils.dart';
 import 'package:supabase_todo/core/validators/email_validator.dart';
 import 'package:supabase_todo/core/validators/password_validator.dart';
 import '../bloc/auth_bloc.dart';
@@ -27,9 +28,7 @@ class LoginPage extends StatelessWidget {
           if (state is AuthAuthenticated) {
             context.go('/home');
           } else if (state is AuthError) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
+            SnackbarUtils.showError(context, state.message);
           }
         },
         builder: (context, state) {
