@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_todo/core/theme/theme.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_event.dart';
+import 'package:supabase_todo/features/category/presentation/bloc/category_bloc.dart';
 import 'package:supabase_todo/features/todo/presentation/bloc/task_bloc.dart';
 import 'core/di/injector.dart' as di;
 import 'core/router/router.dart';
@@ -47,6 +48,14 @@ class MyApp extends StatelessWidget {
             createTask: di.sl(),
             updateTask: di.sl(),
             deleteTask: di.sl(),
+          ),
+        ),
+        BlocProvider(
+          create: (_) => CategoryBloc(
+            getCategories: di.sl(),
+            createCategory: di.sl(),
+            updateCategory: di.sl(),
+            deleteCategory: di.sl(),
           ),
         ),
       ],

@@ -71,7 +71,9 @@ class _TaskListPageState extends State<TaskListPage> {
                           onNewTask: () {
                             context.push('/tasks/form');
                           },
-                          onCategoryPressed: () {},
+                          onCategoryPressed: () {
+                            context.push('/categories');
+                          },
                           onLogoutPressed: () {
                             context.read<AuthBloc>().add(AuthLogoutRequested());
                           },

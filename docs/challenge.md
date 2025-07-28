@@ -6,7 +6,7 @@
   - [ ] Check RLS for security
 - [x] Users should be able to register
 - [x] Users should be able to login
-- [ ] Users should be able to CRUD their tasks (create, read, update, delete)
+- [x] Users should be able to CRUD their tasks (create, read, update, delete)
 - [x] Use Supabase Auth for authentication
 - [x] All data should be stored in Supabase Postgres
 - [x] Can be used Supabase SDK

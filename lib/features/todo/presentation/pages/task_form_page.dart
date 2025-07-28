@@ -7,6 +7,7 @@ import 'package:supabase_todo/features/todo/domain/entities/task_entity.dart';
 import 'package:supabase_todo/features/todo/presentation/bloc/task_bloc.dart';
 import 'package:supabase_todo/features/todo/presentation/bloc/task_events.dart';
 import 'package:supabase_todo/features/todo/presentation/bloc/task_state.dart';
+import 'package:supabase_todo/shared/widgets/async_button.dart';
 
 class TaskFormPage extends StatefulWidget {
   final String userId;
@@ -191,22 +192,10 @@ class _TaskFormPageState extends State<TaskFormPage> {
                 ),
 
                 const SizedBox(height: 24),
-                // TODO: transform into component and apply all async buttons
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _saveTask,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(
-                          widget.task == null ? 'Create Task' : 'Update Task',
-                          style: const TextStyle(fontSize: 16),
-                        ),
+                AsyncButton(
+                  label: widget.task == null ? 'Create Task' : 'Update Task',
+                  isLoading: _isLoading,
+                  onPressed: _saveTask,
                 ),
               ],
             ),

@@ -8,6 +8,14 @@ import 'package:supabase_todo/features/auth/domain/usecases/login_usecase.dart';
 import 'package:supabase_todo/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:supabase_todo/features/auth/data/datasources/auth_datasource.dart';
 import 'package:supabase_todo/features/auth/domain/usecases/register_usecase.dart';
+import 'package:supabase_todo/features/category/data/datasources/category_datasource.dart';
+import 'package:supabase_todo/features/category/data/datasources/remote/category_supabase_datasource.dart';
+import 'package:supabase_todo/features/category/data/repositories/category_repository_impl.dart';
+import 'package:supabase_todo/features/category/domain/repositories/category_repository.dart';
+import 'package:supabase_todo/features/category/domain/usecases/create_category_usecase.dart';
+import 'package:supabase_todo/features/category/domain/usecases/delete_category_usecase.dart';
+import 'package:supabase_todo/features/category/domain/usecases/get_categories_usecase.dart';
+import 'package:supabase_todo/features/category/domain/usecases/update_category_usecase.dart';
 import 'package:supabase_todo/features/todo/data/datasources/remote/task_supabase_datasource.dart';
 import 'package:supabase_todo/features/todo/data/datasources/task_datasource.dart';
 import 'package:supabase_todo/features/todo/data/repositories/task_repository_impl.dart';
@@ -30,10 +38,16 @@ Future<void> init() async {
   sl.registerLazySingleton<TaskDatasource>(
     () => TaskSupabaseDatasource(supabase),
   );
+  sl.registerLazySingleton<CategoryDatasource>(
+    () => CategorySupabaseDatasource(supabase),
+  );
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
   sl.registerLazySingleton<TaskRepository>(() => TaskRepositoryImpl(sl()));
+  sl.registerLazySingleton<CategoryRepository>(
+    () => CategoryRepositoryImpl(sl()),
+  );
 
   // UseCases
   sl.registerLazySingleton(() => LoginUseCase(sl()));
@@ -45,4 +59,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CreateTaskUsecase(sl()));
   sl.registerLazySingleton(() => UpdateTaskUsecase(sl()));
   sl.registerLazySingleton(() => DeleteTaskUsecase(sl()));
+
+  sl.registerLazySingleton(() => GetCategoriesUsecase(sl()));
+  sl.registerLazySingleton(() => CreateCategoryUsecase(sl()));
+  sl.registerLazySingleton(() => UpdateCategoryUsecase(sl()));
+  sl.registerLazySingleton(() => DeleteCategoryUsecase(sl()));
 }
