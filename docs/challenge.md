@@ -36,7 +36,7 @@
   - [x] To do
   - [x] In Progress
   - [x] Done
-- [ ] Dynamic categories (user can create/edit/delete categories)
+- [x] Dynamic categories (user can create/edit/delete categories)
 - [ ] On task creation/editing, user can select a pre-created category
 - [ ] Add photos/videos to tasks (choose from files or record via camera)
 - [ ] Show loading indicators and basic error messages
