@@ -26,7 +26,7 @@ class LoginPage extends StatelessWidget {
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
-            context.go('/home');
+            context.go('/tasks');
           } else if (state is AuthError) {
             SnackbarUtils.showError(context, state.message);
           }
