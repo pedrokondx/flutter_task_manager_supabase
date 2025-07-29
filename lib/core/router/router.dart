@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_todo/features/auth/presentation/pages/register_page.dart';
-import 'package:supabase_todo/features/category/domain/entities/category_entity.dart';
+import 'package:supabase_todo/core/domain/entities/category_entity.dart';
 import 'package:supabase_todo/features/category/presentation/pages/category_form_page.dart';
 import 'package:supabase_todo/features/category/presentation/pages/category_list_page.dart';
 import 'package:supabase_todo/features/todo/domain/entities/task_entity.dart';

@@ -1,22 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_todo/features/category/data/datasources/category_datasource.dart';
-import 'package:supabase_todo/features/category/data/dtos/category_dto.dart';
+import 'package:supabase_todo/core/data/dtos/category_dto.dart';
 
 class CategorySupabaseDatasource implements CategoryDatasource {
   final SupabaseClient supabase;
 
   CategorySupabaseDatasource(this.supabase);
-
-  @override
-  Future<List<CategoryDTO>> getCategories(String userId) async {
-    final data = await supabase
-        .from('categories')
-        .select()
-        .eq('user_id', userId)
-        .order('created_at');
-
-    return data.map((map) => CategoryDTO.fromMap(map)).toList();
-  }
 
   @override
   Future<void> createCategory(CategoryDTO dto) async {

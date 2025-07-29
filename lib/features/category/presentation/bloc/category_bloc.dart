@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_todo/features/category/domain/usecases/create_category_usecase.dart';
 import 'package:supabase_todo/features/category/domain/usecases/delete_category_usecase.dart';
-import 'package:supabase_todo/features/category/domain/usecases/get_categories_usecase.dart';
+import 'package:supabase_todo/core/domain/usecases/get_categories_usecase.dart';
 import 'package:supabase_todo/features/category/domain/usecases/update_category_usecase.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_events.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_state.dart';

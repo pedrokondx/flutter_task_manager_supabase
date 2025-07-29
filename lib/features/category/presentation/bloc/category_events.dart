@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:supabase_todo/features/category/domain/entities/category_entity.dart';
+import 'package:supabase_todo/core/domain/entities/category_entity.dart';
 
 abstract class CategoryEvent extends Equatable {
   @override

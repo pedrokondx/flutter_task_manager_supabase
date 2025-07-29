@@ -1,5 +1,9 @@
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_todo/core/data/datasources/category_preview_datasource.dart';
+import 'package:supabase_todo/core/data/datasources/remote/category_preview_supabase_datasource.dart';
+import 'package:supabase_todo/core/data/repositories/category_preview_repository_impl.dart';
+import 'package:supabase_todo/core/domain/repositories/category_preview_repository.dart';
 import 'package:supabase_todo/features/auth/data/datasources/remote/auth_supabase_datasource.dart';
 import 'package:supabase_todo/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:supabase_todo/features/auth/domain/repositories/auth_repository.dart';
@@ -14,7 +18,7 @@ import 'package:supabase_todo/features/category/data/repositories/category_repos
 import 'package:supabase_todo/features/category/domain/repositories/category_repository.dart';
 import 'package:supabase_todo/features/category/domain/usecases/create_category_usecase.dart';
 import 'package:supabase_todo/features/category/domain/usecases/delete_category_usecase.dart';
-import 'package:supabase_todo/features/category/domain/usecases/get_categories_usecase.dart';
+import 'package:supabase_todo/core/domain/usecases/get_categories_usecase.dart';
 import 'package:supabase_todo/features/category/domain/usecases/update_category_usecase.dart';
 import 'package:supabase_todo/features/todo/data/datasources/remote/task_supabase_datasource.dart';
 import 'package:supabase_todo/features/todo/data/datasources/task_datasource.dart';
@@ -41,12 +45,18 @@ Future<void> init() async {
   sl.registerLazySingleton<CategoryDatasource>(
     () => CategorySupabaseDatasource(supabase),
   );
+  sl.registerLazySingleton<CategoryPreviewDatasource>(
+    () => CategoryPreviewSupabaseDatasource(supabase),
+  );
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
   sl.registerLazySingleton<TaskRepository>(() => TaskRepositoryImpl(sl()));
   sl.registerLazySingleton<CategoryRepository>(
     () => CategoryRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<CategoryPreviewRepository>(
+    () => CategoryPreviewRepositoryImpl(sl()),
   );
 
   // UseCases

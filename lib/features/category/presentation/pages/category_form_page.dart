@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_todo/core/utils/snackbar_utils.dart';
 import 'package:supabase_todo/core/validators/title_validator.dart';
-import 'package:supabase_todo/features/category/domain/entities/category_entity.dart';
+import 'package:supabase_todo/core/domain/entities/category_entity.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_bloc.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_events.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_state.dart';
