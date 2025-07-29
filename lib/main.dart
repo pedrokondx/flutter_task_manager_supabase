@@ -48,6 +48,7 @@ class MyApp extends StatelessWidget {
             createTask: di.sl(),
             updateTask: di.sl(),
             deleteTask: di.sl(),
+            getCategories: di.sl(),
           ),
         ),
         BlocProvider(

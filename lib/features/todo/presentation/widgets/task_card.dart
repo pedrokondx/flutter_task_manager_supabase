@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_todo/features/todo/domain/entities/task_entity.dart';
 import 'package:supabase_todo/features/todo/presentation/bloc/task_bloc.dart';
 import 'package:supabase_todo/features/todo/presentation/bloc/task_events.dart';
+import 'package:supabase_todo/features/todo/presentation/bloc/task_state.dart';
 
 class TaskCard extends StatelessWidget {
   final TaskEntity task;
@@ -44,69 +45,95 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 0,
-      child: ListTile(
-        title: Text(
-          task.title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            decoration: task.status == 'done'
-                ? TextDecoration.lineThrough
-                : TextDecoration.none,
-            color: Theme.of(context).textTheme.titleLarge?.color,
+    return BlocBuilder<TaskBloc, TaskState>(
+      builder: (context, state) {
+        String? categoryName;
+        if (state is TaskOverviewLoaded) {
+          final matched = state.categories.where(
+            (cat) => cat.id == task.categoryId,
+          );
+          categoryName = matched.isNotEmpty ? matched.first.name : null;
+        }
+
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (task.description != null && task.description!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4.0),
-                child: Text(
-                  task.description!,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+          elevation: 0,
+          child: ListTile(
+            title: Text(
+              task.title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                decoration: task.status == 'done'
+                    ? TextDecoration.lineThrough
+                    : TextDecoration.none,
+                color: Theme.of(context).textTheme.titleLarge?.color,
               ),
-            if (task.dueDate != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  'Due: ${task.dueDate!.toLocal().toString().split(' ')[0]}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.secondary.withValues(alpha: 0.7),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (task.description != null && task.description!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      task.description!,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
+                if (categoryName != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      'Category: $categoryName',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.secondary.withAlpha(180),
+                      ),
+                    ),
+                  ),
+                if (task.dueDate != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      'Due: ${task.dueDate!.toLocal().toString().split(' ')[0]}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.secondary.withAlpha(180),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.edit, color: Theme.of(context).primaryColor),
+                  onPressed: () {
+                    context.push('/tasks/form', extra: task);
+                  },
                 ),
-              ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: Icon(Icons.edit, color: Theme.of(context).primaryColor),
-              onPressed: () {
-                context.push('/tasks/form', extra: task);
-              },
+                IconButton(
+                  icon: Icon(
+                    Icons.delete,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  onPressed: () {
+                    _confirmDelete(context);
+                  },
+                ),
+              ],
             ),
-            IconButton(
-              icon: Icon(
-                Icons.delete,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              onPressed: () {
-                _confirmDelete(context);
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

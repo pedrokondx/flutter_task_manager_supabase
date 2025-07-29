@@ -49,7 +49,7 @@ class _TaskListPageState extends State<TaskListPage> {
           builder: (context, state) {
             if (state is TaskLoading) {
               return const Center(child: CircularProgressIndicator());
-            } else if (state is TaskLoaded) {
+            } else if (state is TaskOverviewLoaded) {
               final tasks = _applyFilters(state.tasks);
               final countMap = {
                 'all': state.tasks.length,
@@ -72,7 +72,13 @@ class _TaskListPageState extends State<TaskListPage> {
                             context.push('/tasks/form');
                           },
                           onCategoryPressed: () {
-                            context.push('/categories');
+                            context.push('/categories').then((_) {
+                              if (context.mounted) {
+                                context.read<TaskBloc>().add(
+                                  LoadTasks(widget.userId),
+                                );
+                              }
+                            });
                           },
                           onLogoutPressed: () {
                             context.read<AuthBloc>().add(AuthLogoutRequested());

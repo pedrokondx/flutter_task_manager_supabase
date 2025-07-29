@@ -24,12 +24,15 @@ class _TaskFormPageState extends State<TaskFormPage> {
   late TextEditingController _titleController;
   late TextEditingController _descController;
   String _status = 'to_do';
+  String _category = '';
+  bool _categoryInitialized = false;
   DateTime? _dueDate;
-  bool _isLoading = false;
+  bool get isLoading => context.watch<TaskBloc>().state is TaskLoading;
 
   @override
   void initState() {
     super.initState();
+
     _titleController = TextEditingController(text: widget.task?.title ?? '');
     _descController = TextEditingController(
       text: widget.task?.description ?? '',
@@ -47,8 +50,6 @@ class _TaskFormPageState extends State<TaskFormPage> {
 
   void _saveTask() async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-
       final now = DateTime.now();
       final newTask = TaskEntity(
         id: widget.task?.id ?? '',
@@ -58,7 +59,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
             ? null
             : _descController.text.trim(),
         dueDate: _dueDate,
-        categoryId: widget.task?.categoryId,
+        categoryId: _category.isEmpty ? null : _category,
         status: _status,
         createdAt: widget.task?.createdAt ?? now,
         updatedAt: now,
@@ -87,121 +88,164 @@ class _TaskFormPageState extends State<TaskFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<TaskBloc, TaskState>(
+    return BlocConsumer<TaskBloc, TaskState>(
       listener: (context, state) {
-        setState(() => _isLoading = false);
-
         if (state is TaskError) {
           SnackbarUtils.showError(context, state.message);
-        } else if (state is TaskLoaded) {
+        } else if (state is TaskOverviewLoaded) {
           final action = widget.task == null ? 'created' : 'updated';
           SnackbarUtils.showSuccess(context, 'Task $action successfully!');
-          Navigator.pop(context);
+          context.pop();
         }
       },
-      child: Scaffold(
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                Row(
+
+      builder: (context, state) {
+        if (state is TaskOverviewLoaded) {
+          final categories = state.categories;
+
+          if (!_categoryInitialized) {
+            final exists = categories.any(
+              (c) => c.id == widget.task?.categoryId,
+            );
+            _category = exists ? widget.task!.categoryId! : '';
+            _categoryInitialized = true;
+          }
+
+          return Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: ListView(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () => context.pop(),
-                    ),
-                    Text(
-                      widget.task == null ? 'New Task' : 'Edit Task',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Title',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: TitleValidator.validate,
-                  enabled: !_isLoading,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descController,
-                  decoration: const InputDecoration(
-                    labelText: 'Description (optional)',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                  enabled: !_isLoading,
-                ),
-                const SizedBox(height: 16),
-
-                DropdownButtonFormField<String>(
-                  value: _status,
-                  decoration: const InputDecoration(
-                    labelText: 'Status',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'to_do', child: Text('To Do')),
-                    DropdownMenuItem(
-                      value: 'in_progress',
-                      child: Text('In Progress'),
-                    ),
-                    DropdownMenuItem(value: 'done', child: Text('Done')),
-                  ],
-                  onChanged: _isLoading
-                      ? null
-                      : (value) {
-                          if (value != null) setState(() => _status = value);
-                        },
-                ),
-                const SizedBox(height: 16),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Icon(Icons.calendar_today),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _dueDate == null
-                              ? 'No due date selected'
-                              : 'Due: ${_dueDate!.toLocal().toString().split(' ')[0]}',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: _isLoading ? null : _pickDueDate,
-                        child: const Text('Pick Date'),
-                      ),
-                      if (_dueDate != null)
+                    Row(
+                      children: [
                         IconButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () => setState(() => _dueDate = null),
-                          icon: const Icon(Icons.clear),
-                          tooltip: 'Clear date',
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: () => context.pop(),
                         ),
-                    ],
-                  ),
-                ),
+                        Text(
+                          widget.task == null ? 'New Task' : 'Edit Task',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Title',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: TitleValidator.validate,
+                      enabled: !isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _descController,
+                      decoration: const InputDecoration(
+                        labelText: 'Description (optional)',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                      enabled: !isLoading,
+                    ),
+                    const SizedBox(height: 16),
 
-                const SizedBox(height: 24),
-                AsyncButton(
-                  label: widget.task == null ? 'Create Task' : 'Update Task',
-                  isLoading: _isLoading,
-                  onPressed: _saveTask,
+                    DropdownButtonFormField<String>(
+                      value: _status,
+                      decoration: const InputDecoration(
+                        labelText: 'Status',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'to_do', child: Text('To Do')),
+                        DropdownMenuItem(
+                          value: 'in_progress',
+                          child: Text('In Progress'),
+                        ),
+                        DropdownMenuItem(value: 'done', child: Text('Done')),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                setState(() => _status = value);
+                              }
+                            },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String?>(
+                      value: _category.isEmpty ? null : _category,
+                      decoration: const InputDecoration(
+                        labelText: 'Categoria (opcional)',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Sem categoria'),
+                        ),
+                        ...categories.map(
+                          (category) => DropdownMenuItem(
+                            value: category.id,
+                            child: Text(category.name),
+                          ),
+                        ),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) {
+                              setState(() => _category = value ?? '');
+                            },
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _dueDate == null
+                                  ? 'No due date selected'
+                                  : 'Due: ${_dueDate!.toLocal().toString().split(' ')[0]}',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: isLoading ? null : _pickDueDate,
+                            child: const Text('Pick Date'),
+                          ),
+                          if (_dueDate != null)
+                            IconButton(
+                              onPressed: isLoading
+                                  ? null
+                                  : () => setState(() => _dueDate = null),
+                              icon: const Icon(Icons.clear),
+                              tooltip: 'Clear date',
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+                    AsyncButton(
+                      label: widget.task == null
+                          ? 'Create Task'
+                          : 'Update Task',
+                      isLoading: isLoading,
+                      onPressed: _saveTask,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
+          );
+        }
+        return Scaffold(body: Center(child: CircularProgressIndicator()));
+      },
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_todo/core/domain/usecases/get_categories_usecase.dart';
 import 'package:supabase_todo/features/todo/domain/usecases/create_task_usecase.dart';
 import 'package:supabase_todo/features/todo/domain/usecases/delete_task_usecase.dart';
 import 'package:supabase_todo/features/todo/domain/usecases/get_tasks_usecase.dart';
@@ -12,12 +13,14 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final CreateTaskUsecase createTask;
   final UpdateTaskUsecase updateTask;
   final DeleteTaskUsecase deleteTask;
+  final GetCategoriesUsecase getCategories;
 
   TaskBloc({
     required this.getTasks,
     required this.createTask,
     required this.updateTask,
     required this.deleteTask,
+    required this.getCategories,
   }) : super(TaskInitial()) {
     on<LoadTasks>(_onLoadTasks);
     on<CreateTaskEvent>(_onCreateTask);
@@ -28,8 +31,9 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   Future<void> _onLoadTasks(LoadTasks event, Emitter<TaskState> emit) async {
     emit(TaskLoading());
     try {
+      final categories = await getCategories(event.userId);
       final tasks = await getTasks(event.userId);
-      emit(TaskLoaded(tasks));
+      emit(TaskOverviewLoaded(tasks, categories));
     } catch (e) {
       String errorMessage = 'Failed to load tasks';
       if (e is PostgrestException) {

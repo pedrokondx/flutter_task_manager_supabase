@@ -24,10 +24,7 @@ class TaskHeader extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Tekna.Rocks Tasks",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+              Text("My Tasks", style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 4),
               Text(
                 today,
