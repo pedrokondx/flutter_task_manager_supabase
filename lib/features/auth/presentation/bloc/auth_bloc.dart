@@ -4,7 +4,7 @@ import 'package:supabase_todo/features/auth/domain/usecases/check_session_usecas
 import 'package:supabase_todo/features/auth/domain/usecases/login_usecase.dart';
 import 'package:supabase_todo/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:supabase_todo/features/auth/domain/usecases/register_usecase.dart';
-import 'auth_event.dart';
+import 'auth_events.dart';
 import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {

@@ -5,7 +5,7 @@ import 'package:supabase_todo/core/utils/snackbar_utils.dart';
 import 'package:supabase_todo/core/validators/email_validator.dart';
 import 'package:supabase_todo/core/validators/password_validator.dart';
 import '../bloc/auth_bloc.dart';
-import '../bloc/auth_event.dart';
+import '../bloc/auth_events.dart';
 import '../bloc/auth_state.dart';
 
 class LoginPage extends StatelessWidget {
