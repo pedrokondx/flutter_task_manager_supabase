@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_todo/core/domain/entities/category_entity.dart';
+import 'package:supabase_todo/core/utils/dialog_utils.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_bloc.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_events.dart';
 
@@ -10,39 +11,6 @@ class CategoryCard extends StatelessWidget {
   final String userId;
 
   const CategoryCard({super.key, required this.category, required this.userId});
-  void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Delete Category'),
-          content: Text(
-            'Are you sure you want to delete the category "${category.name}"?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-
-                context.read<CategoryBloc>().add(
-                  DeleteCategoryEvent(category.id, userId),
-                );
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +43,16 @@ class CategoryCard extends StatelessWidget {
                 color: Theme.of(context).colorScheme.error,
               ),
               onPressed: () {
-                _confirmDelete(context);
+                DialogUtils.showDeleteDialog(
+                  context,
+                  'Delete Category',
+                  'Are you sure you want to delete "${category.name}"?',
+                  () {
+                    context.read<CategoryBloc>().add(
+                      DeleteCategoryEvent(category.id, userId),
+                    );
+                  },
+                );
               },
             ),
           ],
