@@ -31,7 +31,7 @@ class RegisterPage extends StatelessWidget {
               'Registration successful! You are now logged in.',
             );
 
-            context.go('/home');
+            context.go('/tasks');
           } else if (state is AuthError) {
             SnackbarUtils.showError(context, state.message);
           }
