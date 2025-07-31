@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_todo/core/theme/theme.dart';
+import 'package:supabase_todo/features/attachment/presentation/bloc/attachment_bloc.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:supabase_todo/features/auth/presentation/bloc/auth_event.dart';
+import 'package:supabase_todo/features/auth/presentation/bloc/auth_events.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_bloc.dart';
-import 'package:supabase_todo/features/todo/presentation/bloc/attachment_bloc.dart';
-import 'package:supabase_todo/features/todo/presentation/bloc/task_bloc.dart';
+
+import 'package:supabase_todo/features/task/presentation/bloc/task_bloc.dart';
 import 'core/di/injector.dart' as di;
 import 'core/router/router.dart';
 
