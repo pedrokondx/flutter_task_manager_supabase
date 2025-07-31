@@ -1,12 +1,22 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_todo/core/utils/dialog_utils.dart';
 import 'package:supabase_todo/core/utils/snackbar_utils.dart';
 import 'package:supabase_todo/core/validators/title_validator.dart';
+import 'package:supabase_todo/features/todo/domain/entities/attachment_entity.dart';
 import 'package:supabase_todo/features/todo/domain/entities/task_entity.dart';
+import 'package:supabase_todo/features/todo/presentation/bloc/attachment_bloc.dart';
+import 'package:supabase_todo/features/todo/presentation/bloc/attachment_events.dart';
+import 'package:supabase_todo/features/todo/presentation/bloc/attachment_state.dart';
 import 'package:supabase_todo/features/todo/presentation/bloc/task_bloc.dart';
 import 'package:supabase_todo/features/todo/presentation/bloc/task_events.dart';
 import 'package:supabase_todo/features/todo/presentation/bloc/task_state.dart';
+import 'package:supabase_todo/features/todo/presentation/widgets/attachment_add_modal.dart';
+import 'package:supabase_todo/features/todo/presentation/widgets/attachment_preview.dart';
+import 'package:supabase_todo/features/todo/presentation/widgets/due_date_picker.dart';
 import 'package:supabase_todo/shared/widgets/async_button.dart';
 
 class TaskFormPage extends StatefulWidget {
@@ -27,18 +37,27 @@ class _TaskFormPageState extends State<TaskFormPage> {
   String _category = '';
   bool _categoryInitialized = false;
   DateTime? _dueDate;
+
+  final List<XFile> _pendingFiles = [];
+  final ImagePicker _picker = ImagePicker();
+
   bool get isLoading => context.watch<TaskBloc>().state is TaskLoading;
+  bool get isAttachmentLoading =>
+      context.watch<AttachmentBloc>().state is AttachmentOperationLoading;
 
   @override
   void initState() {
     super.initState();
-
     _titleController = TextEditingController(text: widget.task?.title ?? '');
     _descController = TextEditingController(
       text: widget.task?.description ?? '',
     );
     _status = widget.task?.status ?? 'to_do';
     _dueDate = widget.task?.dueDate;
+
+    if (widget.task != null) {
+      context.read<AttachmentBloc>().add(LoadAttachmentsEvent(widget.task!.id));
+    }
   }
 
   @override
@@ -48,42 +67,71 @@ class _TaskFormPageState extends State<TaskFormPage> {
     super.dispose();
   }
 
-  void _saveTask() async {
-    if (_formKey.currentState!.validate()) {
-      final now = DateTime.now();
-      final newTask = TaskEntity(
-        id: widget.task?.id ?? '',
-        userId: widget.userId,
-        title: _titleController.text.trim(),
-        description: _descController.text.trim().isEmpty
-            ? null
-            : _descController.text.trim(),
-        dueDate: _dueDate,
-        categoryId: _category.isEmpty ? null : _category,
-        status: _status,
-        createdAt: widget.task?.createdAt ?? now,
-        updatedAt: now,
-      );
+  void _saveTask() {
+    if (!_formKey.currentState!.validate()) return;
 
-      if (widget.task == null) {
-        context.read<TaskBloc>().add(CreateTaskEvent(newTask));
-      } else {
-        context.read<TaskBloc>().add(UpdateTaskEvent(newTask));
-      }
-    }
-  }
-
-  Future<void> _pickDueDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _dueDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+    final now = DateTime.now();
+    final newTask = TaskEntity(
+      id: widget.task?.id ?? '',
+      userId: widget.userId,
+      title: _titleController.text.trim(),
+      description: _descController.text.trim().isEmpty
+          ? null
+          : _descController.text.trim(),
+      dueDate: _dueDate,
+      categoryId: _category.isEmpty ? null : _category,
+      status: _status,
+      createdAt: widget.task?.createdAt ?? now,
+      updatedAt: now,
     );
 
-    if (picked != null) {
-      setState(() => _dueDate = picked);
+    if (widget.task == null) {
+      context.read<TaskBloc>().add(CreateTaskEvent(newTask));
+    } else {
+      context.read<TaskBloc>().add(UpdateTaskEvent(newTask));
     }
+
+    for (final file in _pendingFiles) {
+      final fileName = file.name;
+      final type =
+          fileName.toLowerCase().contains(RegExp(r'\.(jpg|jpeg|png|gif)$'))
+          ? 'image'
+          : 'video';
+
+      context.read<AttachmentBloc>().add(
+        CreateAttachmentEvent(
+          userId: widget.userId,
+          taskId: newTask.id,
+          file: File(file.path),
+          type: type,
+          fileName: fileName,
+        ),
+      );
+    }
+    setState(() => _pendingFiles.clear());
+  }
+
+  Future<void> _addAttachment() async {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => AttachmentAddModal(
+        onTakePhoto: () async {
+          context.pop();
+          final photo = await _picker.pickImage(source: ImageSource.camera);
+          if (photo != null) setState(() => _pendingFiles.add(photo));
+        },
+        onChooseFromGallery: () async {
+          context.pop();
+          final images = await _picker.pickMultipleMedia();
+          if (images.isNotEmpty) setState(() => _pendingFiles.addAll(images));
+        },
+        onRecordVideo: () async {
+          context.pop();
+          final video = await _picker.pickVideo(source: ImageSource.camera);
+          if (video != null) setState(() => _pendingFiles.add(video));
+        },
+      ),
+    );
   }
 
   @override
@@ -98,11 +146,11 @@ class _TaskFormPageState extends State<TaskFormPage> {
           context.pop();
         }
       },
-
       builder: (context, state) {
-        if (state is TaskOverviewLoaded) {
+        if (state is TaskLoading) {
+          return Scaffold(body: Center(child: CircularProgressIndicator()));
+        } else if (state is TaskOverviewLoaded) {
           final categories = state.categories;
-
           if (!_categoryInitialized) {
             final exists = categories.any(
               (c) => c.id == widget.task?.categoryId,
@@ -131,6 +179,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
+
                     TextFormField(
                       controller: _titleController,
                       decoration: const InputDecoration(
@@ -141,6 +190,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
                       enabled: !isLoading,
                     ),
                     const SizedBox(height: 16),
+
                     TextFormField(
                       controller: _descController,
                       decoration: const InputDecoration(
@@ -168,74 +218,97 @@ class _TaskFormPageState extends State<TaskFormPage> {
                       ],
                       onChanged: isLoading
                           ? null
-                          : (value) {
-                              if (value != null) {
-                                setState(() => _status = value);
-                              }
-                            },
+                          : (v) => setState(() => _status = v!),
                     ),
                     const SizedBox(height: 16),
+
                     DropdownButtonFormField<String?>(
                       value: _category.isEmpty ? null : _category,
                       decoration: const InputDecoration(
-                        labelText: 'Categoria (opcional)',
+                        labelText: 'Category (optional)',
                         border: OutlineInputBorder(),
                       ),
                       items: [
                         const DropdownMenuItem(
                           value: null,
-                          child: Text('Sem categoria'),
+                          child: Text('No category'),
                         ),
                         ...categories.map(
-                          (category) => DropdownMenuItem(
-                            value: category.id,
-                            child: Text(category.name),
+                          (c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(c.name),
                           ),
                         ),
                       ],
                       onChanged: isLoading
                           ? null
-                          : (value) {
-                              setState(() => _category = value ?? '');
-                            },
+                          : (v) => setState(() => _category = v ?? ''),
                     ),
                     const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_today),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _dueDate == null
-                                  ? 'No due date selected'
-                                  : 'Due: ${_dueDate!.toLocal().toString().split(' ')[0]}',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: isLoading ? null : _pickDueDate,
-                            child: const Text('Pick Date'),
-                          ),
-                          if (_dueDate != null)
-                            IconButton(
-                              onPressed: isLoading
-                                  ? null
-                                  : () => setState(() => _dueDate = null),
-                              icon: const Icon(Icons.clear),
-                              tooltip: 'Clear date',
-                            ),
-                        ],
-                      ),
+
+                    DueDatePicker(
+                      dueDate: _dueDate,
+                      isLoading: isLoading,
+                      onDateSelected: (date) => setState(() => _dueDate = date),
+                      onClear: () => setState(() => _dueDate = null),
                     ),
 
                     const SizedBox(height: 24),
+
+                    BlocBuilder<AttachmentBloc, AttachmentState>(
+                      builder: (context, attachState) {
+                        List<AttachmentEntity> existing = [];
+                        if (attachState is AttachmentsLoaded) {
+                          existing = attachState.attachments;
+                        }
+                        return AttachmentPreview(
+                          attachments: existing,
+                          pendingFiles: _pendingFiles,
+                          onAddAttachment: _addAttachment,
+                          onDeletePendingFile: (file) =>
+                              setState(() => _pendingFiles.remove(file)),
+                          onDeleteAttachment: (att) =>
+                              DialogUtils.showDeleteDialog(
+                                context,
+                                'Delete Attachment',
+                                'Are you sure?',
+                                () {
+                                  context.read<AttachmentBloc>().add(
+                                    DeleteAttachmentEvent(
+                                      taskId: widget.task?.id ?? '',
+                                      attachmentId: att.id,
+                                    ),
+                                  );
+                                },
+                              ),
+                          onViewAttachment: (att) =>
+                              context.push('/attachment-viewer', extra: att),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    if (isAttachmentLoading) ...[
+                      const Row(
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          SizedBox(width: 8),
+                          Text('Uploading attachments...'),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
                     AsyncButton(
                       label: widget.task == null
                           ? 'Create Task'
                           : 'Update Task',
-                      isLoading: isLoading,
+                      isLoading: isLoading || isAttachmentLoading,
                       onPressed: _saveTask,
                     ),
                   ],
@@ -244,7 +317,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
             ),
           );
         }
-        return Scaffold(body: Center(child: CircularProgressIndicator()));
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
     );
   }

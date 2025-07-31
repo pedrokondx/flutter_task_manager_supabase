@@ -33,6 +33,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     try {
       final categories = await getCategories(event.userId);
       final tasks = await getTasks(event.userId);
+
       emit(TaskOverviewLoaded(tasks, categories));
     } catch (e) {
       String errorMessage = 'Failed to load tasks';
@@ -49,6 +50,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     CreateTaskEvent event,
     Emitter<TaskState> emit,
   ) async {
+    emit(TaskLoading());
     try {
       await createTask(event.task);
       add(LoadTasks(event.task.userId));
@@ -67,8 +69,10 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     UpdateTaskEvent event,
     Emitter<TaskState> emit,
   ) async {
+    emit(TaskLoading());
     try {
       await updateTask(event.task);
+
       add(LoadTasks(event.task.userId));
     } catch (e) {
       String errorMessage = 'Failed to update task';
@@ -77,7 +81,6 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       } else if (e is Exception) {
         errorMessage = 'Failed to update task: ${e.toString()}';
       }
-
       emit(TaskError(errorMessage));
     }
   }
@@ -86,6 +89,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     DeleteTaskEvent event,
     Emitter<TaskState> emit,
   ) async {
+    emit(TaskLoading());
     try {
       await deleteTask(event.taskId, event.userId);
       add(LoadTasks(event.userId));
@@ -96,7 +100,6 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       } else if (e is Exception) {
         errorMessage = 'Failed to delete task: ${e.toString()}';
       }
-
       emit(TaskError(errorMessage));
     }
   }

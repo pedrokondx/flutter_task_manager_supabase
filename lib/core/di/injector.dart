@@ -20,12 +20,19 @@ import 'package:supabase_todo/features/category/domain/usecases/create_category_
 import 'package:supabase_todo/features/category/domain/usecases/delete_category_usecase.dart';
 import 'package:supabase_todo/core/domain/usecases/get_categories_usecase.dart';
 import 'package:supabase_todo/features/category/domain/usecases/update_category_usecase.dart';
+import 'package:supabase_todo/features/todo/data/datasources/attachment_datasource.dart';
+import 'package:supabase_todo/features/todo/data/datasources/remote/attachment_supabase_datasource.dart';
 import 'package:supabase_todo/features/todo/data/datasources/remote/task_supabase_datasource.dart';
 import 'package:supabase_todo/features/todo/data/datasources/task_datasource.dart';
+import 'package:supabase_todo/features/todo/data/repositories/attachment_repository_impl.dart';
 import 'package:supabase_todo/features/todo/data/repositories/task_repository_impl.dart';
+import 'package:supabase_todo/features/todo/domain/repositories/attachment_repository.dart';
 import 'package:supabase_todo/features/todo/domain/repositories/task_repository.dart';
+import 'package:supabase_todo/features/todo/domain/usecases/create_attachment_usecase.dart';
 import 'package:supabase_todo/features/todo/domain/usecases/create_task_usecase.dart';
+import 'package:supabase_todo/features/todo/domain/usecases/delete_attachment_usecase.dart';
 import 'package:supabase_todo/features/todo/domain/usecases/delete_task_usecase.dart';
+import 'package:supabase_todo/features/todo/domain/usecases/get_attachment_usecase.dart';
 import 'package:supabase_todo/features/todo/domain/usecases/get_tasks_usecase.dart';
 import 'package:supabase_todo/features/todo/domain/usecases/update_task_usecase.dart';
 
@@ -48,6 +55,9 @@ Future<void> init() async {
   sl.registerLazySingleton<CategoryPreviewDatasource>(
     () => CategoryPreviewSupabaseDatasource(supabase),
   );
+  sl.registerLazySingleton<AttachmentDatasource>(
+    () => AttachmentSupabaseDatasource(supabase),
+  );
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
@@ -57,6 +67,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<CategoryPreviewRepository>(
     () => CategoryPreviewRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<AttachmentRepository>(
+    () => AttachmentRepositoryImpl(sl()),
   );
 
   // UseCases
@@ -74,4 +87,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CreateCategoryUsecase(sl()));
   sl.registerLazySingleton(() => UpdateCategoryUsecase(sl()));
   sl.registerLazySingleton(() => DeleteCategoryUsecase(sl()));
+
+  sl.registerLazySingleton(() => GetAttachmentsUsecase(sl()));
+  sl.registerLazySingleton(() => CreateAttachmentUsecase(sl()));
+  sl.registerLazySingleton(() => DeleteAttachmentUsecase(sl()));
 }

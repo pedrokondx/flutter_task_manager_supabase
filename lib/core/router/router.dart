@@ -4,9 +4,11 @@ import 'package:supabase_todo/features/auth/presentation/pages/register_page.dar
 import 'package:supabase_todo/core/domain/entities/category_entity.dart';
 import 'package:supabase_todo/features/category/presentation/pages/category_form_page.dart';
 import 'package:supabase_todo/features/category/presentation/pages/category_list_page.dart';
+import 'package:supabase_todo/features/todo/domain/entities/attachment_entity.dart';
 import 'package:supabase_todo/features/todo/domain/entities/task_entity.dart';
 import 'package:supabase_todo/features/todo/presentation/pages/task_form_page.dart';
 import 'package:supabase_todo/features/todo/presentation/pages/task_list_page.dart';
+import 'package:supabase_todo/features/todo/presentation/widgets/attachment_viewer.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -58,8 +60,10 @@ class AppRouter {
           builder: (context, state) {
             final authState = authBloc.state;
             if (authState is AuthAuthenticated) {
-              final task = state.extra as TaskEntity?;
-              return TaskFormPage(userId: authState.userId, task: task);
+              final extras = state.extra as Map<String, dynamic>?;
+              final userId = extras?['userId'] as String?;
+              final task = extras?['task'] as TaskEntity?;
+              return TaskFormPage(userId: userId!, task: task);
             }
             return const SplashPage();
           },
@@ -86,6 +90,13 @@ class AppRouter {
               );
             }
             return const SplashPage();
+          },
+        ),
+        GoRoute(
+          path: '/attachment-viewer',
+          builder: (context, state) {
+            final attachment = state.extra as AttachmentEntity;
+            return AttachmentViewer(attachment: attachment);
           },
         ),
       ],

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_todo/core/domain/entities/category_entity.dart';
+import 'package:supabase_todo/core/utils/dialog_utils.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_event.dart';
 import 'package:supabase_todo/features/todo/domain/entities/task_entity.dart';
@@ -51,6 +53,7 @@ class _TaskListPageState extends State<TaskListPage> {
               return const Center(child: CircularProgressIndicator());
             } else if (state is TaskOverviewLoaded) {
               final tasks = _applyFilters(state.tasks);
+              final categories = state.categories;
               final countMap = {
                 'all': state.tasks.length,
                 'to_do': state.tasks.where((t) => t.status == 'to_do').length,
@@ -69,7 +72,10 @@ class _TaskListPageState extends State<TaskListPage> {
                       children: [
                         TaskHeader(
                           onNewTask: () {
-                            context.push('/tasks/form');
+                            context.push(
+                              '/tasks/form',
+                              extra: {'userId': widget.userId, 'task': null},
+                            );
                           },
                           onCategoryPressed: () {
                             context.push('/categories').then((_) {
@@ -114,14 +120,65 @@ class _TaskListPageState extends State<TaskListPage> {
                             itemCount: tasks.length,
                             itemBuilder: (_, i) {
                               final task = tasks[i];
+                              final category = categories.firstWhere(
+                                (cat) => cat.id == task.categoryId,
+                                orElse: () => CategoryEntity(
+                                  id: '',
+                                  name: '',
+                                  userId: '',
+                                  createdAt: DateTime.now(),
+                                  updatedAt: DateTime.now(),
+                                ),
+                              );
+                              final categoryName = category.name.isNotEmpty
+                                  ? category.name
+                                  : null;
+
                               return TaskCard(
                                 task: task,
-                                userId: widget.userId,
+                                categoryName: categoryName,
+                                onTap: () => context.push(
+                                  '/tasks/form',
+                                  extra: {
+                                    'userId': widget.userId,
+                                    'task': task,
+                                  },
+                                ),
+                                onDelete: () => DialogUtils.showDeleteDialog(
+                                  context,
+                                  'Delete Task',
+                                  'Are you sure you want to delete "${task.title}"?',
+                                  () {
+                                    context.read<TaskBloc>().add(
+                                      DeleteTaskEvent(task.id, widget.userId),
+                                    );
+                                  },
+                                ),
                               );
                             },
                           ),
                   ),
                 ],
+              );
+            } else if (state is TaskError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Error: ${state.message}',
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context.read<TaskBloc>().add(
+                        LoadTasks(widget.userId),
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
               );
             }
 

@@ -1,139 +1,166 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:supabase_todo/features/todo/domain/entities/task_entity.dart';
-import 'package:supabase_todo/features/todo/presentation/bloc/task_bloc.dart';
-import 'package:supabase_todo/features/todo/presentation/bloc/task_events.dart';
-import 'package:supabase_todo/features/todo/presentation/bloc/task_state.dart';
 
-class TaskCard extends StatelessWidget {
+class TaskCard extends StatefulWidget {
   final TaskEntity task;
-  final String userId;
+  final String? categoryName;
+  final VoidCallback? onTap;
+  final VoidCallback? onDelete;
 
-  const TaskCard({super.key, required this.task, required this.userId});
-  void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Delete Task'),
-          content: Text(
-            'Are you sure you want to delete the task "${task.title}"?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
+  const TaskCard({
+    super.key,
+    required this.task,
+    this.categoryName,
+    this.onTap,
+    this.onDelete,
+  });
 
-                context.read<TaskBloc>().add(DeleteTaskEvent(task.id, userId));
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
+  @override
+  State<TaskCard> createState() => _TaskCardState();
+}
+
+class _TaskCardState extends State<TaskCard> {
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'to_do':
+        return Colors.orange;
+      case 'in_progress':
+        return Colors.blue;
+      case 'done':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'to_do':
+        return 'To Do';
+      case 'in_progress':
+        return 'In Progress';
+      case 'done':
+        return 'Done';
+      default:
+        return 'Unknown';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<TaskBloc, TaskState>(
-      builder: (context, state) {
-        String? categoryName;
-        if (state is TaskOverviewLoaded) {
-          final matched = state.categories.where(
-            (cat) => cat.id == task.categoryId,
-          );
-          categoryName = matched.isNotEmpty ? matched.first.name : null;
-        }
-
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
-          child: ListTile(
-            title: Text(
-              task.title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                decoration: task.status == 'done'
-                    ? TextDecoration.lineThrough
-                    : TextDecoration.none,
-                color: Theme.of(context).textTheme.titleLarge?.color,
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: widget.onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.task.title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        decoration: widget.task.status == 'done'
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
+                  ),
+                  if (widget.onDelete != null)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: widget.onDelete,
+                      tooltip: 'Delete task',
+                    ),
+                ],
               ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (task.description != null && task.description!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Text(
-                      task.description!,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+
+              if (widget.task.description != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  widget.task.description!,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+
+              const SizedBox(height: 12),
+
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
                     ),
-                  ),
-                if (categoryName != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(
+                        widget.task.status,
+                      ).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _getStatusColor(
+                          widget.task.status,
+                        ).withValues(alpha: 0.3),
+                      ),
+                    ),
                     child: Text(
-                      'Category: $categoryName',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.secondary.withAlpha(180),
+                      _getStatusText(widget.task.status),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _getStatusColor(widget.task.status),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                if (task.dueDate != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Text(
-                      'Due: ${task.dueDate!.toLocal().toString().split(' ')[0]}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.secondary.withAlpha(180),
+
+                  if (widget.categoryName != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.purple.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        widget.categoryName!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.purple,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit, color: Theme.of(context).primaryColor),
-                  onPressed: () {
-                    context.push('/tasks/form', extra: task);
-                  },
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.delete,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  onPressed: () {
-                    _confirmDelete(context);
-                  },
-                ),
-              ],
-            ),
+                  ],
+
+                  const Spacer(),
+
+                  if (widget.task.dueDate != null) ...[
+                    Icon(Icons.schedule, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      widget.task.dueDate!.toLocal().toString().split(' ')[0],
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ],
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
