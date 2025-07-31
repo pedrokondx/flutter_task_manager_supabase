@@ -40,7 +40,8 @@
 - [x] On task creation/editing, user can select a pre-created category
 - [x] Add photos/videos to tasks (choose from files or record via camera)
 - [ ] Show loading indicators and basic error messages
-- [ ] Form validation for Login, Registration, Tasks, ETC
+- [x] Form validation for Login, Registration, Tasks, ETC
+  - [x] Validate attachment size, mimetype etc
 - [ ] Simple and functional interface (Material)
 - [ ] Ensure README states table schemas in supabase
 

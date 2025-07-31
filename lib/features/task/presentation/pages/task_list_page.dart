@@ -52,74 +52,106 @@ class _TaskListPageState extends State<TaskListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: BlocBuilder<TaskBloc, TaskState>(
-          builder: (context, state) {
-            if (state is TaskLoading) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (state is TaskOverviewLoaded) {
-              final tasks = _applyFilters(state.tasks);
-              final categories = state.categories;
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: SafeArea(
+          child: BlocBuilder<TaskBloc, TaskState>(
+            builder: (context, state) {
+              if (state is TaskLoading) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (state is TaskOverviewLoaded) {
+                final tasks = _applyFilters(state.tasks);
+                final categories = state.categories;
 
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TaskHeader(
-                          onNewTask: () {
-                            context.push(
-                              '/tasks/form',
-                              extra: {'userId': widget.userId, 'task': null},
-                            );
-                          },
-                          onCategoryPressed: () {
-                            context.push('/categories').then((_) {
-                              if (context.mounted) {
-                                context.read<TaskBloc>().add(
-                                  LoadTasks(widget.userId),
-                                );
-                              }
-                            });
-                          },
-                          onLogoutPressed: () {
-                            context.read<AuthBloc>().add(AuthLogoutRequested());
-                          },
-                        ),
-
-                        TextField(
-                          onChanged: (value) {
-                            setState(
-                              () => textFilter = value.trim().toLowerCase(),
-                            );
-                          },
-                          decoration: const InputDecoration(
-                            hintText: 'Search by title or description...',
-                            prefixIcon: Icon(Icons.search),
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TaskHeader(
+                            onNewTask: () {
+                              context.push(
+                                '/tasks/form',
+                                extra: {'userId': widget.userId, 'task': null},
+                              );
+                            },
+                            onCategoryPressed: () {
+                              context.push('/categories').then((_) {
+                                if (context.mounted) {
+                                  context.read<TaskBloc>().add(
+                                    LoadTasks(widget.userId),
+                                  );
+                                }
+                              });
+                            },
+                            onLogoutPressed: () {
+                              context.read<AuthBloc>().add(
+                                AuthLogoutRequested(),
+                              );
+                            },
                           ),
-                        ),
-                        const SizedBox(height: 16),
 
-                        FilterDropdowns(
-                          selectedCategory: selectedCategory,
-                          selectedStatus: selectedFilter,
-                          categories: [
-                            "Select category",
-                            ...categories.map((cat) => cat.name),
-                          ],
-                          statusOptions: {
-                            'all': 'All',
-                            'to_do': 'To Do',
-                            'in_progress': 'In Progress',
-                            'done': 'Done',
-                          },
-                          onCategoryChanged: (val) => setState(() {
-                            selectedCategory = val;
-                            selectedCategoryId = categories
-                                .firstWhere(
-                                  (cat) => cat.name == val,
+                          TextField(
+                            onChanged: (value) {
+                              setState(
+                                () => textFilter = value.trim().toLowerCase(),
+                              );
+                            },
+                            decoration: const InputDecoration(
+                              hintText: 'Search by title or description...',
+                              prefixIcon: Icon(Icons.search),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          FilterDropdowns(
+                            selectedCategory: selectedCategory,
+                            selectedStatus: selectedFilter,
+                            categories: [
+                              "Select category",
+                              ...categories.map((cat) => cat.name),
+                            ],
+                            statusOptions: {
+                              'all': 'All',
+                              'to_do': 'To Do',
+                              'in_progress': 'In Progress',
+                              'done': 'Done',
+                            },
+                            onCategoryChanged: (val) => setState(() {
+                              selectedCategory = val;
+                              selectedCategoryId = categories
+                                  .firstWhere(
+                                    (cat) => cat.name == val,
+                                    orElse: () => CategoryEntity(
+                                      id: '',
+                                      name: '',
+                                      userId: '',
+                                      createdAt: DateTime.now(),
+                                      updatedAt: DateTime.now(),
+                                    ),
+                                  )
+                                  .id;
+                            }),
+                            onStatusChanged: (val) =>
+                                setState(() => selectedFilter = val),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: tasks.isEmpty
+                          ? const Center(child: Text("No tasks found"))
+                          : ListView.builder(
+                              itemCount: tasks.length,
+                              itemBuilder: (_, i) {
+                                final task = tasks[i];
+                                final category = categories.firstWhere(
+                                  (cat) => cat.id == task.categoryId,
                                   orElse: () => CategoryEntity(
                                     id: '',
                                     name: '',
@@ -127,86 +159,62 @@ class _TaskListPageState extends State<TaskListPage> {
                                     createdAt: DateTime.now(),
                                     updatedAt: DateTime.now(),
                                   ),
-                                )
-                                .id;
-                          }),
-                          onStatusChanged: (val) =>
-                              setState(() => selectedFilter = val),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: tasks.isEmpty
-                        ? const Center(child: Text("No tasks found"))
-                        : ListView.builder(
-                            itemCount: tasks.length,
-                            itemBuilder: (_, i) {
-                              final task = tasks[i];
-                              final category = categories.firstWhere(
-                                (cat) => cat.id == task.categoryId,
-                                orElse: () => CategoryEntity(
-                                  id: '',
-                                  name: '',
-                                  userId: '',
-                                  createdAt: DateTime.now(),
-                                  updatedAt: DateTime.now(),
-                                ),
-                              );
-                              final categoryName = category.name.isNotEmpty
-                                  ? category.name
-                                  : null;
+                                );
+                                final categoryName = category.name.isNotEmpty
+                                    ? category.name
+                                    : null;
 
-                              return TaskCard(
-                                task: task,
-                                categoryName: categoryName,
-                                onTap: () => context.push(
-                                  '/tasks/form',
-                                  extra: {
-                                    'userId': widget.userId,
-                                    'task': task,
-                                  },
-                                ),
-                                onDelete: () => DialogUtils.showDeleteDialog(
-                                  context,
-                                  'Delete Task',
-                                  'Are you sure you want to delete "${task.title}"?',
-                                  () {
-                                    context.read<TaskBloc>().add(
-                                      DeleteTaskEvent(task.id, widget.userId),
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              );
-            } else if (state is TaskError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Error: ${state.message}',
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => context.read<TaskBloc>().add(
-                        LoadTasks(widget.userId),
-                      ),
-                      child: const Text('Retry'),
+                                return TaskCard(
+                                  task: task,
+                                  categoryName: categoryName,
+                                  onTap: () => context.push(
+                                    '/tasks/form',
+                                    extra: {
+                                      'userId': widget.userId,
+                                      'task': task,
+                                    },
+                                  ),
+                                  onDelete: () => DialogUtils.showDeleteDialog(
+                                    context,
+                                    'Delete Task',
+                                    'Are you sure you want to delete "${task.title}"?',
+                                    () {
+                                      context.read<TaskBloc>().add(
+                                        DeleteTaskEvent(task.id, widget.userId),
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
                     ),
                   ],
-                ),
-              );
-            }
+                );
+              } else if (state is TaskError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Error: ${state.message}',
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => context.read<TaskBloc>().add(
+                          LoadTasks(widget.userId),
+                        ),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              }
 
-            return const Center(child: Text("No tasks found"));
-          },
+              return const Center(child: Text("No tasks found"));
+            },
+          ),
         ),
       ),
     );
