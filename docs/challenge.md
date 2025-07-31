@@ -3,7 +3,7 @@
 ## 🔒 Important (Stacks and Requirements)
 
 - [x] Use Supabase
-  - [ ] Check RLS for security
+  - [x] Check RLS for security
 - [x] Users should be able to register
 - [x] Users should be able to login
 - [x] Users should be able to CRUD their tasks (create, read, update, delete)
@@ -38,7 +38,7 @@
   - [x] Done
 - [x] Dynamic categories (user can create/edit/delete categories)
 - [x] On task creation/editing, user can select a pre-created category
-- [ ] Add photos/videos to tasks (choose from files or record via camera)
+- [x] Add photos/videos to tasks (choose from files or record via camera)
 - [ ] Show loading indicators and basic error messages
 - [ ] Form validation for Login, Registration, Tasks, ETC
 - [ ] Simple and functional interface (Material)
