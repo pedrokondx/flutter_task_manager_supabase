@@ -154,7 +154,9 @@ class _TaskFormPageState extends State<TaskFormPage> {
             final exists = categories.any(
               (c) => c.id == widget.task?.categoryId,
             );
+
             _category = exists ? widget.task!.categoryId! : '';
+
             _categoryInitialized = true;
           }
 

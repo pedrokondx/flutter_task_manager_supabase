@@ -26,8 +26,8 @@
 - [x] Filter tasks via text field on task list screen based on:
   - [x] Title
   - [x] Description
-  - [ ] Category
-  - [ ] Status
+  - [x] Category
+  - [x] Status
 - [x] Create new task (title, description, due date, category, and status)
   - [x] Create with category
 - [x] Edit existing tasks

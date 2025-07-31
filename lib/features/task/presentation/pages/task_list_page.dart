@@ -9,7 +9,7 @@ import 'package:supabase_todo/features/task/domain/entities/task_entity.dart';
 import 'package:supabase_todo/features/task/presentation/bloc/task_bloc.dart';
 import 'package:supabase_todo/features/task/presentation/bloc/task_events.dart';
 import 'package:supabase_todo/features/task/presentation/bloc/task_state.dart';
-import 'package:supabase_todo/features/task/presentation/widgets/filter_tabs.dart';
+import 'package:supabase_todo/features/task/presentation/widgets/filter_dropdowns.dart';
 import 'package:supabase_todo/features/task/presentation/widgets/task_card.dart';
 import 'package:supabase_todo/features/task/presentation/widgets/task_header.dart';
 
@@ -23,6 +23,8 @@ class TaskListPage extends StatefulWidget {
 
 class _TaskListPageState extends State<TaskListPage> {
   String selectedFilter = 'all';
+  String selectedCategory = 'Select category';
+  String selectedCategoryId = '';
   String textFilter = '';
 
   @override
@@ -38,8 +40,12 @@ class _TaskListPageState extends State<TaskListPage> {
       final matchesText =
           task.title.toLowerCase().contains(textFilter) ||
           (task.description ?? '').toLowerCase().contains(textFilter);
+      final matchesCategory =
+          selectedCategory == 'Select category' && selectedCategoryId.isEmpty
+          ? true
+          : task.categoryId == selectedCategoryId;
 
-      return matchesStatus && matchesText;
+      return matchesStatus && matchesText && matchesCategory;
     }).toList();
   }
 
@@ -54,14 +60,6 @@ class _TaskListPageState extends State<TaskListPage> {
             } else if (state is TaskOverviewLoaded) {
               final tasks = _applyFilters(state.tasks);
               final categories = state.categories;
-              final countMap = {
-                'all': state.tasks.length,
-                'to_do': state.tasks.where((t) => t.status == 'to_do').length,
-                'in_progress': state.tasks
-                    .where((t) => t.status == 'in_progress')
-                    .length,
-                'done': state.tasks.where((t) => t.status == 'done').length,
-              };
 
               return Column(
                 children: [
@@ -102,13 +100,38 @@ class _TaskListPageState extends State<TaskListPage> {
                             prefixIcon: Icon(Icons.search),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        FilterTabs(
-                          selected: selectedFilter,
-                          counts: countMap,
-                          onChanged: (value) {
-                            setState(() => selectedFilter = value);
+                        const SizedBox(height: 16),
+
+                        FilterDropdowns(
+                          selectedCategory: selectedCategory,
+                          selectedStatus: selectedFilter,
+                          categories: [
+                            "Select category",
+                            ...categories.map((cat) => cat.name),
+                          ],
+                          statusOptions: {
+                            'all': 'All',
+                            'to_do': 'To Do',
+                            'in_progress': 'In Progress',
+                            'done': 'Done',
                           },
+                          onCategoryChanged: (val) => setState(() {
+                            selectedCategory = val;
+                            selectedCategoryId = categories
+                                .firstWhere(
+                                  (cat) => cat.name == val,
+                                  orElse: () => CategoryEntity(
+                                    id: '',
+                                    name: '',
+                                    userId: '',
+                                    createdAt: DateTime.now(),
+                                    updatedAt: DateTime.now(),
+                                  ),
+                                )
+                                .id;
+                          }),
+                          onStatusChanged: (val) =>
+                              setState(() => selectedFilter = val),
                         ),
                       ],
                     ),
