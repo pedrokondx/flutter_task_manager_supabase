@@ -15,6 +15,9 @@ class CreateAttachmentUsecase {
     required String type,
     required String fileName,
   }) {
+    if (file.lengthSync() > 50 * 1024 * 1024) {
+      throw Exception('File size exceeds 50MB limit');
+    }
     return repository.createAttachment(
       userId: userId,
       taskId: taskId,
