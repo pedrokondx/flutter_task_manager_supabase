@@ -30,7 +30,7 @@ class CreateAttachmentEvent extends AttachmentEvent {
   });
 
   @override
-  List<Object?> get props => [taskId, fileName];
+  List<Object?> get props => [taskId, fileName, file, type, userId];
 }
 
 class DeleteAttachmentEvent extends AttachmentEvent {
