@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_todo/core/domain/entities/category_entity.dart';
 import 'package:supabase_todo/core/domain/usecases/get_categories_usecase.dart';
 import 'package:supabase_todo/features/task/domain/usecases/create_task_usecase.dart';
 import 'package:supabase_todo/features/task/domain/usecases/delete_task_usecase.dart';
@@ -31,8 +32,12 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   Future<void> _onLoadTasks(LoadTasks event, Emitter<TaskState> emit) async {
     emit(TaskLoading());
     try {
-      final categories = await getCategories(event.userId);
+      final categoriesResult = await getCategories(event.userId);
+      List<CategoryEntity> categories = [];
       final tasks = await getTasks(event.userId);
+      categoriesResult.isLeft()
+          ? null
+          : categories.addAll(categoriesResult.getOrElse(() => []));
 
       emit(TaskOverviewLoaded(tasks, categories));
     } catch (e) {

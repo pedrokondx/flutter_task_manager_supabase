@@ -41,8 +41,6 @@ class AttachmentSupabaseDatasource implements AttachmentDatasource {
       }
 
       return attachments;
-    } on PostgrestException catch (e) {
-      throw AttachmentException.datasourceError(e);
     } catch (e) {
       throw AttachmentException.datasourceError(e);
     }
@@ -83,8 +81,6 @@ class AttachmentSupabaseDatasource implements AttachmentDatasource {
           .single();
 
       return AttachmentDTO.fromMap(response);
-    } on PostgrestException catch (e) {
-      throw AttachmentException.uploadFailed(e);
     } catch (e) {
       throw AttachmentException.uploadFailed(e);
     }
@@ -109,8 +105,6 @@ class AttachmentSupabaseDatasource implements AttachmentDatasource {
         throw AttachmentException.storageDeletionFailed('File not found');
       }
       await supabase.from('attachments').delete().eq('id', attachmentId);
-    } on PostgrestException catch (e) {
-      throw AttachmentException.storageDeletionFailed(e);
     } catch (e) {
       throw AttachmentException.storageDeletionFailed(e);
     }
