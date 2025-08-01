@@ -1,3 +1,5 @@
+import 'package:dartz/dartz.dart';
+import 'package:supabase_todo/core/domain/exceptions/category_exception.dart';
 import 'package:supabase_todo/features/category/data/datasources/category_datasource.dart';
 import 'package:supabase_todo/core/data/dtos/category_dto.dart';
 import 'package:supabase_todo/core/domain/entities/category_entity.dart';
@@ -9,19 +11,41 @@ class CategoryRepositoryImpl implements CategoryRepository {
   CategoryRepositoryImpl(this.datasource);
 
   @override
-  Future<void> createCategory(CategoryEntity category) {
-    final dto = CategoryDTO.fromEntity(category);
-    return datasource.createCategory(dto);
+  Future<Either<CategoryException, Unit>> createCategory(
+    CategoryEntity category,
+  ) async {
+    try {
+      final dto = CategoryDTO.fromEntity(category);
+      await datasource.createCategory(dto);
+      return Right(unit);
+    } catch (e) {
+      return Left(CategoryException.categoryCreationFailure(e));
+    }
   }
 
   @override
-  Future<void> updateCategory(CategoryEntity category) {
-    final dto = CategoryDTO.fromEntity(category);
-    return datasource.updateCategory(dto);
+  Future<Either<CategoryException, Unit>> updateCategory(
+    CategoryEntity category,
+  ) async {
+    try {
+      final dto = CategoryDTO.fromEntity(category);
+      await datasource.updateCategory(dto);
+      return Right(unit);
+    } catch (e) {
+      return Left(CategoryException.categoryUpdateFailure(e));
+    }
   }
 
   @override
-  Future<void> deleteCategory(String categoryId, String userId) {
-    return datasource.deleteCategory(categoryId, userId);
+  Future<Either<CategoryException, Unit>> deleteCategory(
+    String categoryId,
+    String userId,
+  ) async {
+    try {
+      await datasource.deleteCategory(categoryId, userId);
+      return Right(unit);
+    } catch (e) {
+      return Left(CategoryException.categoryDeletionFailure(e));
+    }
   }
 }
