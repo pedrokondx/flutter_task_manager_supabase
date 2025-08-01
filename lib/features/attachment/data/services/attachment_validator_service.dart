@@ -16,16 +16,20 @@ class AttachmentValidationService implements FileValidationService {
     required String type,
     required String fileName,
   }) async {
-    // Validate file size
     final file = File(filePath);
-    final fileSize = await file.length();
-
-    if (fileSize > maxFileSizeBytes) {
-      throw AttachmentException.fileTooLarge();
+    // Validate file exists and is readable
+    if (!await file.exists()) {
+      throw AttachmentException.notFound();
     }
+
+    // Validate file size
+    final fileSize = await file.length();
 
     if (fileSize == 0) {
       throw AttachmentException.fileEmpty();
+    }
+    if (fileSize > maxFileSizeBytes) {
+      throw AttachmentException.fileTooLarge();
     }
 
     // Validate file type
@@ -39,11 +43,6 @@ class AttachmentValidationService implements FileValidationService {
 
     if (!validExtensions.contains(extension)) {
       throw AttachmentException.invalidExtension(extension, type);
-    }
-
-    // Validate file exists and is readable
-    if (!await file.exists()) {
-      throw AttachmentException.notFound();
     }
   }
 }
