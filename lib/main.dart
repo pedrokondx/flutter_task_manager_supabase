@@ -18,10 +18,10 @@ void main() async {
   await di.init();
 
   final authBloc = AuthBloc(
-    loginUseCase: di.sl(),
-    checkSessionUseCase: di.sl(),
+    loginUsecase: di.sl(),
+    checkSessionUsecase: di.sl(),
     logoutUsecase: di.sl(),
-    registerUseCase: di.sl(),
+    registerUsecase: di.sl(),
   )..add(AuthCheckSession());
 
   AppRouter.init(authBloc);

@@ -1,5 +1,7 @@
+import 'package:dartz/dartz.dart';
 import 'package:supabase_todo/features/auth/data/datasources/auth_datasource.dart';
 import 'package:supabase_todo/features/auth/domain/entities/user_entity.dart';
+import 'package:supabase_todo/features/auth/domain/exceptions/auth_exception.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -8,23 +10,51 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this.remote);
 
   @override
-  Future<UserEntity> login(String email, String password) async {
-    final dto = await remote.login(email, password);
-    return dto.toEntity();
+  Future<Either<AuthException, UserEntity>> login(
+    String email,
+    String password,
+  ) async {
+    try {
+      final dto = await remote.login(email, password);
+      return Right(dto.toEntity());
+    } catch (e) {
+      return Left(AuthException.loginFailure(e));
+    }
   }
 
   @override
-  Future<UserEntity?> hasSession() async {
-    final dto = await remote.hasSession();
-    return dto?.toEntity();
+  Future<Either<AuthException, UserEntity?>> hasSession() async {
+    try {
+      final dto = await remote.hasSession();
+      if (dto == null) {
+        return Left(AuthException.sessionNotFound());
+      }
+      return Right(dto.toEntity());
+    } catch (e) {
+      return Left(AuthException.sessionCheckFailure(e));
+    }
   }
 
   @override
-  Future<void> logout() => remote.logout();
+  Future<Either<AuthException, Unit>> logout() async {
+    try {
+      await remote.logout();
+      return const Right(unit);
+    } catch (e) {
+      return Left(AuthException.logoutFailure(e));
+    }
+  }
 
   @override
-  Future<UserEntity> register(String email, String password) async {
-    final dto = await remote.register(email, password);
-    return dto.toEntity();
+  Future<Either<AuthException, UserEntity>> register(
+    String email,
+    String password,
+  ) async {
+    try {
+      final dto = await remote.register(email, password);
+      return Right(dto.toEntity());
+    } catch (e) {
+      return Left(AuthException.registrationFailure(e));
+    }
   }
 }

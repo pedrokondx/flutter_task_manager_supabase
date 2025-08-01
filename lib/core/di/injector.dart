@@ -80,10 +80,10 @@ Future<void> init() async {
   );
 
   // UseCases
-  sl.registerLazySingleton(() => LoginUseCase(sl()));
-  sl.registerLazySingleton(() => CheckSessionUseCase(sl()));
+  sl.registerLazySingleton(() => LoginUsecase(sl()));
+  sl.registerLazySingleton(() => CheckSessionUsecase(sl()));
   sl.registerLazySingleton(() => LogoutUsecase(sl()));
-  sl.registerLazySingleton(() => RegisterUseCase(sl()));
+  sl.registerLazySingleton(() => RegisterUsecase(sl()));
 
   sl.registerLazySingleton(() => GetTasksUsecase(sl()));
   sl.registerLazySingleton(() => CreateTaskUsecase(sl()));
