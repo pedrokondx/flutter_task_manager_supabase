@@ -1,4 +1,6 @@
-class AttachmentEntity {
+import 'package:equatable/equatable.dart';
+
+class AttachmentEntity extends Equatable {
   final String id;
   final String taskId;
   final String fileUrl;
@@ -6,7 +8,7 @@ class AttachmentEntity {
   final String fileName;
   final DateTime createdAt;
 
-  AttachmentEntity({
+  const AttachmentEntity({
     required this.id,
     required this.taskId,
     required this.fileUrl,
@@ -14,4 +16,6 @@ class AttachmentEntity {
     required this.fileName,
     required this.createdAt,
   });
+  @override
+  List<Object?> get props => [id, taskId, fileUrl, type, fileName, createdAt];
 }
