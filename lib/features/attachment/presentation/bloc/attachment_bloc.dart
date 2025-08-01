@@ -18,18 +18,16 @@ class AttachmentBloc extends Bloc<AttachmentEvent, AttachmentState> {
     on<CreateAttachmentEvent>(_onCreateAttachment);
     on<DeleteAttachmentEvent>(_onDeleteAttachment);
   }
-
   Future<void> _onLoadAttachments(
     LoadAttachmentsEvent event,
     Emitter<AttachmentState> emit,
   ) async {
     emit(AttachmentsLoading());
-    try {
-      final attachments = await getAttachments(event.taskId);
-      emit(AttachmentsLoaded(event.taskId, attachments));
-    } catch (e) {
-      emit(AttachmentError('Failed to load attachments: \$e'));
-    }
+    final result = await getAttachments(event.taskId);
+    result.fold(
+      (failure) => emit(AttachmentError(failure.message)),
+      (attachments) => emit(AttachmentsLoaded(event.taskId, attachments)),
+    );
   }
 
   Future<void> _onCreateAttachment(
@@ -37,19 +35,17 @@ class AttachmentBloc extends Bloc<AttachmentEvent, AttachmentState> {
     Emitter<AttachmentState> emit,
   ) async {
     emit(AttachmentOperationLoading());
-    try {
-      await createAttachment(
-        userId: event.userId,
-        taskId: event.taskId,
-        file: event.file,
-        type: event.type,
-        fileName: event.fileName,
-      );
+    final result = await createAttachment(
+      userId: event.userId,
+      taskId: event.taskId,
+      file: event.file,
+      type: event.type,
+      fileName: event.fileName,
+    );
+    result.fold((failure) => emit(AttachmentError(failure.message)), (_) {
       emit(AttachmentOperationSuccess('Attachment added successfully'));
       add(LoadAttachmentsEvent(event.taskId));
-    } catch (e) {
-      emit(AttachmentError('Failed to create attachment: \$e'));
-    }
+    });
   }
 
   Future<void> _onDeleteAttachment(
@@ -57,12 +53,10 @@ class AttachmentBloc extends Bloc<AttachmentEvent, AttachmentState> {
     Emitter<AttachmentState> emit,
   ) async {
     emit(AttachmentOperationLoading());
-    try {
-      await deleteAttachment(event.attachmentId);
+    final result = await deleteAttachment(attachmentId: event.attachmentId);
+    result.fold((failure) => emit(AttachmentError(failure.message)), (_) {
       emit(AttachmentOperationSuccess('Attachment deleted successfully'));
       add(LoadAttachmentsEvent(event.taskId));
-    } catch (e) {
-      emit(AttachmentError('Failed to delete attachment: \$e'));
-    }
+    });
   }
 }

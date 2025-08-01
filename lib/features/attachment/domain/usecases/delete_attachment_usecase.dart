@@ -1,3 +1,5 @@
+import 'package:dartz/dartz.dart';
+import 'package:supabase_todo/features/attachment/domain/exceptions/attachment_exception.dart';
 import 'package:supabase_todo/features/attachment/domain/repositories/attachment_repository.dart';
 
 class DeleteAttachmentUsecase {
@@ -5,7 +7,9 @@ class DeleteAttachmentUsecase {
 
   DeleteAttachmentUsecase(this.repository);
 
-  Future<void> call(String attachmentId) {
+  Future<Either<AttachmentException, void>> call({
+    required String attachmentId,
+  }) {
     return repository.deleteAttachment(attachmentId);
   }
 }

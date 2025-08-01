@@ -19,10 +19,10 @@ class AttachmentPreview extends StatelessWidget {
     required this.onViewAttachment,
   });
 
+  int get totalItems => attachments.length + pendingFiles.length;
+
   @override
   Widget build(BuildContext context) {
-    final totalItems = attachments.length + pendingFiles.length;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

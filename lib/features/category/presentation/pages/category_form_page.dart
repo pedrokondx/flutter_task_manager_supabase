@@ -7,7 +7,7 @@ import 'package:supabase_todo/core/domain/entities/category_entity.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_bloc.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_events.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_state.dart';
-import 'package:supabase_todo/shared/widgets/async_button.dart';
+import 'package:supabase_todo/core/ui/widgets/async_button.dart';
 
 class CategoryFormPage extends StatefulWidget {
   final String userId;

@@ -12,7 +12,7 @@ import 'package:supabase_todo/features/task/presentation/bloc/task_bloc.dart';
 import 'package:supabase_todo/features/task/presentation/bloc/task_events.dart';
 import 'package:supabase_todo/features/task/presentation/bloc/task_state.dart';
 import 'package:supabase_todo/features/task/presentation/widgets/due_date_picker.dart';
-import 'package:supabase_todo/shared/widgets/async_button.dart';
+import 'package:supabase_todo/core/ui/widgets/async_button.dart';
 // Attachments Presentation
 import 'package:supabase_todo/features/attachment/presentation/bloc/attachment_bloc.dart';
 import 'package:supabase_todo/features/attachment/presentation/bloc/attachment_events.dart';

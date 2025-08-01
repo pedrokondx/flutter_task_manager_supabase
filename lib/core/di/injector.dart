@@ -4,6 +4,8 @@ import 'package:supabase_todo/core/data/datasources/category_preview_datasource.
 import 'package:supabase_todo/core/data/datasources/remote/category_preview_supabase_datasource.dart';
 import 'package:supabase_todo/core/data/repositories/category_preview_repository_impl.dart';
 import 'package:supabase_todo/core/domain/repositories/category_preview_repository.dart';
+import 'package:supabase_todo/features/attachment/data/services/attachment_validator_service.dart';
+import 'package:supabase_todo/features/attachment/domain/services/file_validation_service.dart';
 import 'package:supabase_todo/features/auth/data/datasources/remote/auth_supabase_datasource.dart';
 import 'package:supabase_todo/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:supabase_todo/features/auth/domain/repositories/auth_repository.dart';
@@ -41,6 +43,11 @@ final sl = GetIt.instance;
 Future<void> init() async {
   // Supabase client
   final supabase = Supabase.instance.client;
+
+  // Services
+  sl.registerLazySingleton<FileValidationService>(
+    () => AttachmentValidationService(),
+  );
 
   // Data sources
   sl.registerLazySingleton<AuthDataSource>(
@@ -89,6 +96,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeleteCategoryUsecase(sl()));
 
   sl.registerLazySingleton(() => GetAttachmentsUsecase(sl()));
-  sl.registerLazySingleton(() => CreateAttachmentUsecase(sl()));
+  sl.registerLazySingleton(() => CreateAttachmentUsecase(sl(), sl()));
   sl.registerLazySingleton(() => DeleteAttachmentUsecase(sl()));
 }

@@ -3,12 +3,13 @@ import 'package:path/path.dart' as path;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_todo/features/attachment/data/datasources/attachment_datasource.dart';
 import 'package:supabase_todo/features/attachment/data/dtos/attachment_dto.dart';
+import 'package:supabase_todo/features/attachment/domain/exceptions/attachment_exception.dart';
+import 'package:supabase_todo/features/attachment/data/services/filename_sanitizer.dart';
 
 class AttachmentSupabaseDatasource implements AttachmentDatasource {
   final SupabaseClient supabase;
 
   AttachmentSupabaseDatasource(this.supabase);
-
   @override
   Future<List<AttachmentDTO>> getAttachments(String taskId) async {
     try {
@@ -40,8 +41,10 @@ class AttachmentSupabaseDatasource implements AttachmentDatasource {
       }
 
       return attachments;
+    } on PostgrestException catch (e) {
+      throw AttachmentException.datasourceError(e);
     } catch (e) {
-      throw Exception('Failed to get attachments: $e');
+      throw AttachmentException.datasourceError(e);
     }
   }
 
@@ -55,7 +58,8 @@ class AttachmentSupabaseDatasource implements AttachmentDatasource {
   }) async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final extension = path.extension(fileName);
+      final safeFileName = sanitizeFileName(fileName);
+      final extension = path.extension(safeFileName);
       final uniqueFileName = '$userId/${taskId}_$timestamp$extension';
 
       await supabase.storage.from('attachments').upload(uniqueFileName, file);
@@ -79,8 +83,10 @@ class AttachmentSupabaseDatasource implements AttachmentDatasource {
           .single();
 
       return AttachmentDTO.fromMap(response);
+    } on PostgrestException catch (e) {
+      throw AttachmentException.uploadFailed(e);
     } catch (e) {
-      throw Exception('Failed to create attachment: $e');
+      throw AttachmentException.uploadFailed(e);
     }
   }
 
@@ -96,11 +102,17 @@ class AttachmentSupabaseDatasource implements AttachmentDatasource {
       final fileUrl = attachment['file_url'] as String;
       final fileUrlPath = fileUrl.split('/attachments/').last;
 
-      await supabase.storage.from('attachments').remove([fileUrlPath]);
-
+      final removeResult = await supabase.storage.from('attachments').remove([
+        fileUrlPath,
+      ]);
+      if (removeResult.isEmpty) {
+        throw AttachmentException.storageDeletionFailed('File not found');
+      }
       await supabase.from('attachments').delete().eq('id', attachmentId);
+    } on PostgrestException catch (e) {
+      throw AttachmentException.storageDeletionFailed(e);
     } catch (e) {
-      throw Exception('Failed to delete attachment: $e');
+      throw AttachmentException.storageDeletionFailed(e);
     }
   }
 }

@@ -15,25 +15,28 @@ class AttachmentAddModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.photo_camera),
-            title: const Text('Take Photo'),
-            onTap: onTakePhoto,
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_library),
-            title: const Text('Choose from Gallery'),
-            onTap: onChooseFromGallery,
-          ),
-          ListTile(
-            leading: const Icon(Icons.videocam),
-            title: const Text('Record Video'),
-            onTap: onRecordVideo,
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Take Photo'),
+              onTap: onTakePhoto,
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: onChooseFromGallery,
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam),
+              title: const Text('Record Video'),
+              onTap: onRecordVideo,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:supabase_todo/core/theme/theme.dart';
-import 'package:supabase_todo/features/attachment/presentation/bloc/attachment_bloc.dart';
+import 'package:supabase_todo/app.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_events.dart';
-import 'package:supabase_todo/features/category/presentation/bloc/category_bloc.dart';
-
-import 'package:supabase_todo/features/task/presentation/bloc/task_bloc.dart';
 import 'core/di/injector.dart' as di;
 import 'core/router/router.dart';
 
@@ -32,48 +27,4 @@ void main() async {
   AppRouter.init(authBloc);
 
   runApp(MyApp(authBloc: authBloc));
-}
-
-class MyApp extends StatelessWidget {
-  final AuthBloc authBloc;
-
-  const MyApp({super.key, required this.authBloc});
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: authBloc),
-        BlocProvider(
-          create: (_) => TaskBloc(
-            getTasks: di.sl(),
-            createTask: di.sl(),
-            updateTask: di.sl(),
-            deleteTask: di.sl(),
-            getCategories: di.sl(),
-          ),
-        ),
-        BlocProvider(
-          create: (_) => AttachmentBloc(
-            createAttachment: di.sl(),
-            getAttachments: di.sl(),
-            deleteAttachment: di.sl(),
-          ),
-        ),
-        BlocProvider(
-          create: (_) => CategoryBloc(
-            getCategories: di.sl(),
-            createCategory: di.sl(),
-            updateCategory: di.sl(),
-            deleteCategory: di.sl(),
-          ),
-        ),
-      ],
-      child: MaterialApp.router(
-        title: 'Supabase Todo',
-        theme: AppTheme.light,
-        routerConfig: AppRouter.router,
-      ),
-    );
-  }
 }
