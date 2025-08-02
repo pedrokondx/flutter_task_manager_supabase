@@ -20,12 +20,8 @@ class CategoryDTO {
       id: map['id'] ?? '',
       userId: map['user_id'] ?? '',
       name: map['name'] ?? '',
-      createdAt: map['created_at'] != null
-          ? DateTime.parse(map['created_at'])
-          : DateTime.now(),
-      updatedAt: map['updated_at'] != null
-          ? DateTime.parse(map['updated_at'])
-          : DateTime.now(),
+      createdAt: DateTime.parse(map['created_at']),
+      updatedAt: DateTime.parse(map['updated_at']),
     );
   }
 

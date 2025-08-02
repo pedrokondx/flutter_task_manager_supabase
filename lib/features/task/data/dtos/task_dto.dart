@@ -1,4 +1,5 @@
 import 'package:supabase_todo/features/task/domain/entities/task_entity.dart';
+import 'package:supabase_todo/features/task/domain/entities/task_status.dart';
 
 class TaskDTO {
   final String id;
@@ -31,13 +32,9 @@ class TaskDTO {
       description: map['description'],
       dueDate: map['due_date'] != null ? DateTime.parse(map['due_date']) : null,
       categoryId: map['category_id'],
-      status: map['status'] ?? 'to_do',
-      createdAt: map['created_at'] != null
-          ? DateTime.parse(map['created_at'])
-          : DateTime.now(),
-      updatedAt: map['updated_at'] != null
-          ? DateTime.parse(map['updated_at'])
-          : DateTime.now(),
+      status: TaskStatus.fromString(map['status'] ?? 'to_do').value,
+      createdAt: DateTime.parse(map['created_at']),
+      updatedAt: DateTime.parse(map['updated_at']),
     );
   }
 
@@ -64,7 +61,7 @@ class TaskDTO {
     description: description,
     dueDate: dueDate,
     categoryId: categoryId,
-    status: status,
+    status: TaskStatus.fromString(status),
     createdAt: createdAt,
     updatedAt: updatedAt,
   );
@@ -76,7 +73,7 @@ class TaskDTO {
     description: entity.description,
     dueDate: entity.dueDate,
     categoryId: entity.categoryId,
-    status: entity.status,
+    status: entity.status.value,
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
   );

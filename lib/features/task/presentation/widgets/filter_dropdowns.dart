@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_todo/features/task/domain/entities/task_status.dart';
 
 class FilterDropdowns extends StatelessWidget {
   final String selectedCategory;
-  final String selectedStatus;
+  final TaskStatus? selectedStatus;
   final Map<String, String> statusOptions;
   final List<String> categories;
   final Function(String) onCategoryChanged;
-  final Function(String) onStatusChanged;
+  final Function(TaskStatus?) onStatusChanged;
 
   const FilterDropdowns({
     super.key,
@@ -43,7 +44,7 @@ class FilterDropdowns extends StatelessWidget {
         const SizedBox(width: 16),
 
         Expanded(
-          child: DropdownButtonFormField<String>(
+          child: DropdownButtonFormField<TaskStatus?>(
             value: selectedStatus,
             decoration: const InputDecoration(
               labelText: 'Status',
@@ -52,7 +53,7 @@ class FilterDropdowns extends StatelessWidget {
             ),
             items: statusOptions.entries.map((entry) {
               return DropdownMenuItem(
-                value: entry.key,
+                value: TaskStatus.fromString(entry.key),
                 child: Text(entry.value),
               );
             }).toList(),

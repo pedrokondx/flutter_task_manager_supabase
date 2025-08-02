@@ -3,22 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_todo/features/task/presentation/cubit/task_overview_cubit.dart';
+import 'package:supabase_todo/features/task/presentation/widgets/due_date_picker.dart';
+import 'package:uuid/uuid.dart';
 import 'package:supabase_todo/core/utils/dialog_utils.dart';
 import 'package:supabase_todo/core/utils/snackbar_utils.dart';
 import 'package:supabase_todo/core/validators/title_validator.dart';
-import 'package:supabase_todo/features/attachment/presentation/widgets/attachment_header.dart';
-import 'package:supabase_todo/features/task/domain/entities/task_entity.dart';
-import 'package:supabase_todo/features/task/presentation/bloc/task_bloc.dart';
-import 'package:supabase_todo/features/task/presentation/bloc/task_events.dart';
-import 'package:supabase_todo/features/task/presentation/bloc/task_state.dart';
-import 'package:supabase_todo/features/task/presentation/widgets/due_date_picker.dart';
-import 'package:supabase_todo/core/ui/widgets/async_button.dart';
-// Attachments Presentation
 import 'package:supabase_todo/features/attachment/presentation/bloc/attachment_bloc.dart';
 import 'package:supabase_todo/features/attachment/presentation/bloc/attachment_events.dart';
 import 'package:supabase_todo/features/attachment/presentation/bloc/attachment_state.dart';
 import 'package:supabase_todo/features/attachment/presentation/widgets/attachment_add_modal.dart';
+import 'package:supabase_todo/features/attachment/presentation/widgets/attachment_header.dart';
 import 'package:supabase_todo/features/attachment/presentation/widgets/attachment_preview.dart';
+import 'package:supabase_todo/features/task/domain/entities/task_entity.dart';
+import 'package:supabase_todo/features/task/domain/entities/task_status.dart';
+import 'package:supabase_todo/core/ui/widgets/async_button.dart';
 
 class TaskFormPage extends StatefulWidget {
   final String userId;
@@ -32,17 +31,16 @@ class TaskFormPage extends StatefulWidget {
 
 class _TaskFormPageState extends State<TaskFormPage> {
   final _formKey = GlobalKey<FormState>();
+  final _uuid = const Uuid();
   late TextEditingController _titleController;
   late TextEditingController _descController;
-  String _status = 'to_do';
+  TaskStatus _status = TaskStatus.toDo;
   String _category = '';
   bool _categoryInitialized = false;
   DateTime? _dueDate;
 
   final List<XFile> _pendingFiles = [];
   final ImagePicker _picker = ImagePicker();
-
-  bool get isLoading => context.watch<TaskBloc>().state is TaskLoading;
 
   @override
   void initState() {
@@ -51,7 +49,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
     _descController = TextEditingController(
       text: widget.task?.description ?? '',
     );
-    _status = widget.task?.status ?? 'to_do';
+    _status = widget.task?.status ?? TaskStatus.toDo;
     _dueDate = widget.task?.dueDate;
 
     if (widget.task != null) {
@@ -71,7 +69,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
 
     final now = DateTime.now();
     final newTask = TaskEntity(
-      id: widget.task?.id ?? '',
+      id: widget.task?.id ?? _uuid.v4(),
       userId: widget.userId,
       title: _titleController.text.trim(),
       description: _descController.text.trim().isEmpty
@@ -85,9 +83,9 @@ class _TaskFormPageState extends State<TaskFormPage> {
     );
 
     if (widget.task == null) {
-      context.read<TaskBloc>().add(CreateTaskEvent(newTask));
+      context.read<TaskOverviewCubit>().create(newTask);
     } else {
-      context.read<TaskBloc>().add(UpdateTaskEvent(newTask));
+      context.read<TaskOverviewCubit>().update(newTask);
     }
 
     for (final file in _pendingFiles) {
@@ -110,6 +108,217 @@ class _TaskFormPageState extends State<TaskFormPage> {
     setState(() => _pendingFiles.clear());
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<TaskOverviewCubit, TaskOverviewState>(
+      listenWhen: (previous, current) {
+        if (previous.errorMessage != current.errorMessage) return true;
+        if (previous.lastSuccessMessage != current.lastSuccessMessage) {
+          return true;
+        }
+        return false;
+      },
+      listener: (context, state) {
+        if (state.errorMessage != null) {
+          SnackbarUtils.showError(context, state.errorMessage!);
+        } else if (state.lastSuccessMessage != null) {
+          SnackbarUtils.showSuccess(context, state.lastSuccessMessage!);
+          final returned = widget.task == null
+              ? state.tasks.first
+              : state.tasks.firstWhere(
+                  (t) => t.id == widget.task!.id,
+                  orElse: () => state.tasks.first,
+                );
+          context.pop(returned);
+        }
+      },
+      buildWhen: (previous, current) {
+        if (previous.tasks == current.tasks &&
+            previous.categories == current.categories &&
+            previous.isSaving == current.isSaving &&
+            previous.isDeleting == current.isDeleting &&
+            previous.errorMessage == current.errorMessage) {
+          return false;
+        }
+        return true;
+      },
+      builder: (context, state) {
+        final isLoading = state.isLoading;
+        final isSaving = state.isSaving;
+
+        if (state.isLoading && state.tasks.isEmpty) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (state.errorMessage != null && state.tasks.isEmpty) {
+          return Scaffold(
+            body: Center(child: Text('Erro: ${state.errorMessage}')),
+          );
+        }
+
+        final categories = state.categories;
+        if (!_categoryInitialized) {
+          final exists = categories.any((c) => c.id == widget.task?.categoryId);
+          _category = exists ? widget.task!.categoryId! : '';
+          _categoryInitialized = true;
+        }
+
+        return Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () => context.pop(),
+                      ),
+                      Text(
+                        widget.task == null ? 'New Task' : 'Edit Task',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Title',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: TitleValidator.validate,
+                    enabled: !isLoading,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _descController,
+                    decoration: const InputDecoration(
+                      labelText: 'Description (optional)',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                    enabled: !isLoading,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _status.value,
+                    decoration: const InputDecoration(
+                      labelText: 'Status',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'to_do', child: Text('To Do')),
+                      DropdownMenuItem(
+                        value: 'in_progress',
+                        child: Text('In Progress'),
+                      ),
+                      DropdownMenuItem(value: 'done', child: Text('Done')),
+                    ],
+                    onChanged: isLoading
+                        ? null
+                        : (v) => setState(
+                            () => _status = TaskStatus.fromString(v!),
+                          ),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String?>(
+                    value: _category.isEmpty ? null : _category,
+                    decoration: const InputDecoration(
+                      labelText: 'Category (optional)',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('No category'),
+                      ),
+                      ...categories.map(
+                        (c) =>
+                            DropdownMenuItem(value: c.id, child: Text(c.name)),
+                      ),
+                    ],
+                    onChanged: isLoading
+                        ? null
+                        : (v) => setState(() => _category = v ?? ''),
+                  ),
+                  const SizedBox(height: 16),
+                  DueDatePicker(
+                    dueDate: _dueDate,
+                    isLoading: isLoading,
+                    onDateSelected: (date) => setState(() => _dueDate = date),
+                    onClear: () => setState(() => _dueDate = null),
+                  ),
+                  const SizedBox(height: 24),
+                  BlocBuilder<AttachmentBloc, AttachmentState>(
+                    builder: (context, attachState) {
+                      final isLoaded = attachState is AttachmentsLoaded;
+                      return Column(
+                        children: [
+                          AttachmentHeader(
+                            onAddAttachment: isLoaded ? _addAttachment : () {},
+                          ),
+                          const SizedBox(height: 8),
+                          if (isLoaded)
+                            AttachmentPreview(
+                              attachments: attachState.attachments,
+                              pendingFiles: _pendingFiles,
+                              onDeletePendingFile: (file) =>
+                                  setState(() => _pendingFiles.remove(file)),
+                              onDeleteAttachment: (att) =>
+                                  DialogUtils.showDeleteDialog(
+                                    context,
+                                    'Delete Attachment',
+                                    'Are you sure?',
+                                    () {
+                                      context.read<AttachmentBloc>().add(
+                                        DeleteAttachmentEvent(
+                                          taskId: widget.task?.id ?? '',
+                                          attachmentId: att.id,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                              onViewAttachment: (att) => context.push(
+                                '/attachment-viewer',
+                                extra: att,
+                              ),
+                            )
+                          else
+                            const Row(
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text('Loading attachments...'),
+                              ],
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  AsyncButton(
+                    label: widget.task == null ? 'Create Task' : 'Update Task',
+                    isLoading: isSaving,
+                    onPressed: _saveTask,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _addAttachment() async {
     showModalBottomSheet(
       context: context,
@@ -130,205 +339,6 @@ class _TaskFormPageState extends State<TaskFormPage> {
           if (video != null) setState(() => _pendingFiles.add(video));
         },
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocConsumer<TaskBloc, TaskState>(
-      listener: (context, state) {
-        if (state is TaskError) {
-          SnackbarUtils.showError(context, state.message);
-        } else if (state is TaskOverviewLoaded) {
-          final action = widget.task == null ? 'created' : 'updated';
-          SnackbarUtils.showSuccess(context, 'Task $action successfully!');
-          context.pop();
-        }
-      },
-      builder: (context, state) {
-        if (state is TaskLoading) {
-          return Scaffold(body: Center(child: CircularProgressIndicator()));
-        } else if (state is TaskOverviewLoaded) {
-          final categories = state.categories;
-          if (!_categoryInitialized) {
-            final exists = categories.any(
-              (c) => c.id == widget.task?.categoryId,
-            );
-
-            _category = exists ? widget.task!.categoryId! : '';
-
-            _categoryInitialized = true;
-          }
-
-          return Scaffold(
-            body: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () => context.pop(),
-                        ),
-                        Text(
-                          widget.task == null ? 'New Task' : 'Edit Task',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Title',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: TitleValidator.validate,
-                      enabled: !isLoading,
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _descController,
-                      decoration: const InputDecoration(
-                        labelText: 'Description (optional)',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 3,
-                      enabled: !isLoading,
-                    ),
-                    const SizedBox(height: 16),
-
-                    DropdownButtonFormField<String>(
-                      value: _status,
-                      decoration: const InputDecoration(
-                        labelText: 'Status',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'to_do', child: Text('To Do')),
-                        DropdownMenuItem(
-                          value: 'in_progress',
-                          child: Text('In Progress'),
-                        ),
-                        DropdownMenuItem(value: 'done', child: Text('Done')),
-                      ],
-                      onChanged: isLoading
-                          ? null
-                          : (v) => setState(() => _status = v!),
-                    ),
-                    const SizedBox(height: 16),
-
-                    DropdownButtonFormField<String?>(
-                      value: _category.isEmpty ? null : _category,
-                      decoration: const InputDecoration(
-                        labelText: 'Category (optional)',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text('No category'),
-                        ),
-                        ...categories.map(
-                          (c) => DropdownMenuItem(
-                            value: c.id,
-                            child: Text(c.name),
-                          ),
-                        ),
-                      ],
-                      onChanged: isLoading
-                          ? null
-                          : (v) => setState(() => _category = v ?? ''),
-                    ),
-                    const SizedBox(height: 16),
-
-                    DueDatePicker(
-                      dueDate: _dueDate,
-                      isLoading: isLoading,
-                      onDateSelected: (date) => setState(() => _dueDate = date),
-                      onClear: () => setState(() => _dueDate = null),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    BlocBuilder<AttachmentBloc, AttachmentState>(
-                      builder: (context, attachState) {
-                        final isLoaded = attachState is AttachmentsLoaded;
-
-                        return Column(
-                          children: [
-                            AttachmentHeader(
-                              onAddAttachment: isLoaded
-                                  ? _addAttachment
-                                  : () {},
-                            ),
-                            const SizedBox(height: 8),
-                            if (isLoaded)
-                              AttachmentPreview(
-                                attachments: attachState.attachments,
-                                pendingFiles: _pendingFiles,
-                                onDeletePendingFile: (file) =>
-                                    setState(() => _pendingFiles.remove(file)),
-                                onDeleteAttachment: (att) =>
-                                    DialogUtils.showDeleteDialog(
-                                      context,
-                                      'Delete Attachment',
-                                      'Are you sure?',
-                                      () {
-                                        context.read<AttachmentBloc>().add(
-                                          DeleteAttachmentEvent(
-                                            taskId: widget.task?.id ?? '',
-                                            attachmentId: att.id,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                onViewAttachment: (att) => context.push(
-                                  '/attachment-viewer',
-                                  extra: att,
-                                ),
-                              )
-                            else
-                              const Row(
-                                children: [
-                                  SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text('Loading attachments...'),
-                                ],
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    AsyncButton(
-                      label: widget.task == null
-                          ? 'Create Task'
-                          : 'Update Task',
-                      isLoading: isLoading,
-                      onPressed: _saveTask,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
-      },
     );
   }
 }

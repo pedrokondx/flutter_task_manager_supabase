@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_todo/features/task/domain/entities/task_entity.dart';
+import 'package:supabase_todo/features/task/domain/entities/task_status.dart';
 
 class TaskCard extends StatefulWidget {
   final TaskEntity task;
@@ -20,29 +21,14 @@ class TaskCard extends StatefulWidget {
 }
 
 class _TaskCardState extends State<TaskCard> {
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(TaskStatus status) {
     switch (status) {
-      case 'to_do':
+      case TaskStatus.toDo:
         return Colors.orange;
-      case 'in_progress':
+      case TaskStatus.inProgress:
         return Colors.blue;
-      case 'done':
+      case TaskStatus.done:
         return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'to_do':
-        return 'To Do';
-      case 'in_progress':
-        return 'In Progress';
-      case 'done':
-        return 'Done';
-      default:
-        return 'Unknown';
     }
   }
 
@@ -112,7 +98,7 @@ class _TaskCardState extends State<TaskCard> {
                       ),
                     ),
                     child: Text(
-                      _getStatusText(widget.task.status),
+                      widget.task.status.toReadableString,
                       style: TextStyle(
                         fontSize: 12,
                         color: _getStatusColor(widget.task.status),

@@ -24,9 +24,7 @@ class AttachmentDTO {
       fileUrl: map['file_url'] ?? '',
       type: map['type'] ?? '',
       fileName: map['file_name'] ?? '',
-      createdAt: map['created_at'] != null
-          ? DateTime.parse(map['created_at'])
-          : DateTime.now(),
+      createdAt: DateTime.parse(map['created_at']),
     );
   }
 
