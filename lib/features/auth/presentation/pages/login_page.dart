@@ -17,12 +17,16 @@ class LoginPage extends StatelessWidget {
     final passwordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
+    login() {
+      if (formKey.currentState!.validate()) {
+        context.read<AuthBloc>().add(
+          AuthLoginRequested(emailController.text, passwordController.text),
+        );
+      }
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
-      ),
+      appBar: AppBar(title: const Text('Login')),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
@@ -43,32 +47,24 @@ class LoginPage extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'Welcome back!',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(labelText: 'Email'),
                     keyboardType: TextInputType.emailAddress,
                     validator: EmailValidator.validate,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: passwordController,
+                    onFieldSubmitted: (_) => login(),
                     obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                    decoration: InputDecoration(labelText: 'Password'),
                     validator: PasswordValidator.validate,
                   ),
                   const SizedBox(height: 20),
@@ -82,28 +78,7 @@ class LoginPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (formKey.currentState!.validate()) {
-                        context.read<AuthBloc>().add(
-                          AuthLoginRequested(
-                            emailController.text,
-                            passwordController.text,
-                          ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Login', style: TextStyle(fontSize: 16)),
-                  ),
+                  ElevatedButton(onPressed: login, child: const Text('Login')),
                 ],
               ),
             ),

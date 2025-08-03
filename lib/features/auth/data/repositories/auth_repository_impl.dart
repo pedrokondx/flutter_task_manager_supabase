@@ -27,7 +27,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final dto = await remote.hasSession();
       if (dto == null) {
-        return Left(AuthException.sessionNotFound());
+        return Right(null);
       }
       return Right(dto.toEntity());
     } catch (e) {

@@ -17,12 +17,16 @@ class RegisterPage extends StatelessWidget {
     final passwordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
+    register() {
+      if (formKey.currentState!.validate()) {
+        context.read<AuthBloc>().add(
+          AuthRegisterRequested(emailController.text, passwordController.text),
+        );
+      }
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
-      ),
+      appBar: AppBar(title: const Text('Register')),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
@@ -48,32 +52,24 @@ class RegisterPage extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'Welcome!',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(labelText: 'Email'),
                     keyboardType: TextInputType.emailAddress,
                     validator: EmailValidator.validate,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: passwordController,
+                    onFieldSubmitted: (_) => register(),
                     obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                    decoration: InputDecoration(labelText: 'Password'),
                     validator: PasswordValidator.validate,
                   ),
                   const SizedBox(height: 20),
@@ -88,29 +84,8 @@ class RegisterPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () {
-                      if (formKey.currentState!.validate()) {
-                        context.read<AuthBloc>().add(
-                          AuthRegisterRequested(
-                            emailController.text,
-                            passwordController.text,
-                          ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'Register',
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    onPressed: register,
+                    child: const Text('Register'),
                   ),
                 ],
               ),
