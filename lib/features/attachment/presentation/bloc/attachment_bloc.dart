@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_todo/features/attachment/domain/entities/attachment_entity.dart';
 import 'package:supabase_todo/features/attachment/domain/usecases/create_attachment_usecase.dart';
 import 'package:supabase_todo/features/attachment/domain/usecases/delete_attachment_usecase.dart';
 import 'package:supabase_todo/features/attachment/domain/usecases/get_attachment_usecase.dart';
@@ -35,7 +36,6 @@ class AttachmentBloc extends Bloc<AttachmentEvent, AttachmentState> {
     CreateAttachmentEvent event,
     Emitter<AttachmentState> emit,
   ) async {
-    emit(AttachmentOperationLoading());
     final result = await createAttachment(
       userId: event.userId,
       taskId: event.taskId,
@@ -43,9 +43,16 @@ class AttachmentBloc extends Bloc<AttachmentEvent, AttachmentState> {
       type: event.type,
       fileName: event.fileName,
     );
-    result.fold((failure) => emit(AttachmentError(failure.message)), (_) {
+    result.fold((failure) => emit(AttachmentError(failure.message)), (
+      newEntity,
+    ) {
+      final currentList = state is AttachmentsLoaded
+          ? (state as AttachmentsLoaded).attachments
+          : <AttachmentEntity>[];
+
       emit(AttachmentOperationSuccess('Attachment added successfully'));
-      add(LoadAttachmentsEvent(event.taskId));
+
+      emit(AttachmentsLoaded(event.taskId, [...currentList, newEntity]));
     });
   }
 
@@ -53,11 +60,15 @@ class AttachmentBloc extends Bloc<AttachmentEvent, AttachmentState> {
     DeleteAttachmentEvent event,
     Emitter<AttachmentState> emit,
   ) async {
-    emit(AttachmentOperationLoading());
     final result = await deleteAttachment(attachmentId: event.attachmentId);
     result.fold((failure) => emit(AttachmentError(failure.message)), (_) {
+      List<AttachmentEntity> filtered = [];
+      if (state is AttachmentsLoaded) {
+        final prev = (state as AttachmentsLoaded).attachments;
+        filtered = prev.where((a) => a.id != event.attachmentId).toList();
+      }
       emit(AttachmentOperationSuccess('Attachment deleted successfully'));
-      add(LoadAttachmentsEvent(event.taskId));
+      emit(AttachmentsLoaded(event.taskId, filtered));
     });
   }
 

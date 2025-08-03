@@ -17,16 +17,11 @@ class AttachmentRepositoryImpl implements AttachmentRepository {
     try {
       final dtos = await datasource.getAttachments(taskId);
       return Right(dtos.map((dto) => dto.toEntity()).toList());
-    } on AttachmentException catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(
-        AttachmentException(
-          message: 'Unknown error fetching attachments',
-          code: 'UNKNOWN_GET_ATTACHMENTS',
-          inner: e,
-        ),
-      );
+      if (e is AttachmentException) {
+        return Left(e);
+      }
+      return Left(AttachmentException.attachmentFetchFailure(e));
     }
   }
 
@@ -47,16 +42,12 @@ class AttachmentRepositoryImpl implements AttachmentRepository {
         fileName: fileName,
       );
       return Right(dto.toEntity());
-    } on AttachmentException catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(
-        AttachmentException(
-          message: 'Unknown error creating attachment',
-          code: 'UNKNOWN_CREATE_ATTACHMENT',
-          inner: e,
-        ),
-      );
+      if (e is AttachmentException) {
+        return Left(e);
+      }
+
+      return Left(AttachmentException.attachmentCreationFailure(e));
     }
   }
 
@@ -67,16 +58,12 @@ class AttachmentRepositoryImpl implements AttachmentRepository {
     try {
       await datasource.deleteAttachment(attachmentId);
       return const Right(null);
-    } on AttachmentException catch (e) {
-      return Left(e);
     } catch (e) {
-      return Left(
-        AttachmentException(
-          message: 'Unknown error deleting attachment',
-          code: 'UNKNOWN_DELETE_ATTACHMENT',
-          inner: e,
-        ),
-      );
+      if (e is AttachmentException) {
+        return Left(e);
+      }
+
+      return Left(AttachmentException.attachmentDeletionFailure(e));
     }
   }
 }

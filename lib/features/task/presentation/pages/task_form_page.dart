@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_todo/features/attachment/domain/entities/attachment_entity.dart';
 import 'package:supabase_todo/features/task/presentation/cubit/task_cubit.dart';
 import 'package:supabase_todo/features/task/presentation/widgets/due_date_picker.dart';
 import 'package:uuid/uuid.dart';
@@ -40,6 +41,8 @@ class _TaskFormPageState extends State<TaskFormPage> {
   DateTime? _dueDate;
 
   final List<XFile> _pendingFiles = [];
+  List<AttachmentEntity> _lastAttachments = [];
+
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -107,7 +110,6 @@ class _TaskFormPageState extends State<TaskFormPage> {
         ),
       );
     }
-    setState(() => _pendingFiles.clear());
   }
 
   @override
@@ -248,18 +250,50 @@ class _TaskFormPageState extends State<TaskFormPage> {
                     onClear: () => setState(() => _dueDate = null),
                   ),
                   const SizedBox(height: 24),
-                  BlocBuilder<AttachmentBloc, AttachmentState>(
+                  BlocConsumer<AttachmentBloc, AttachmentState>(
+                    listener: (context, state) {
+                      if (state is AttachmentOperationSuccess) {
+                        SnackbarUtils.showSuccess(context, state.message);
+                      } else if (state is AttachmentError) {
+                        SnackbarUtils.showError(context, state.message);
+                      }
+                    },
                     builder: (context, attachState) {
+                      if (attachState is AttachmentsLoaded) {
+                        _lastAttachments = attachState.attachments;
+                      }
+
                       final isLoaded = attachState is AttachmentsLoaded;
+                      final isLoadingAttachments =
+                          attachState is AttachmentsLoading;
+
+                      final attachmentsToShow = isLoaded
+                          ? attachState.attachments
+                          : _lastAttachments;
+
                       return Column(
                         children: [
                           AttachmentHeader(
                             onAddAttachment: isLoaded ? _addAttachment : () {},
                           ),
                           const SizedBox(height: 8),
-                          if (isLoaded)
+                          if (attachmentsToShow.isEmpty && isLoadingAttachments)
+                            const Row(
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text('Loading attachments...'),
+                              ],
+                            )
+                          else
                             AttachmentPreview(
-                              attachments: attachState.attachments,
+                              attachments: attachmentsToShow,
                               pendingFiles: _pendingFiles,
                               onDeletePendingFile: (file) =>
                                   setState(() => _pendingFiles.remove(file)),
@@ -281,25 +315,12 @@ class _TaskFormPageState extends State<TaskFormPage> {
                                 '/attachment-viewer',
                                 extra: att,
                               ),
-                            )
-                          else
-                            const Row(
-                              children: [
-                                SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Text('Loading attachments...'),
-                              ],
                             ),
                         ],
                       );
                     },
                   ),
+
                   const SizedBox(height: 24),
                   AsyncButton(
                     label: widget.task == null ? 'Create Task' : 'Update Task',

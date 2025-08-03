@@ -42,7 +42,7 @@ class AttachmentSupabaseDatasource implements AttachmentDatasource {
 
       return attachments;
     } catch (e) {
-      throw AttachmentException.datasourceError(e);
+      throw AttachmentException.attachmentFetchFailure(e);
     }
   }
 
@@ -58,31 +58,41 @@ class AttachmentSupabaseDatasource implements AttachmentDatasource {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final safeFileName = sanitizeFileName(fileName);
       final extension = path.extension(safeFileName);
-      final uniqueFileName = '$userId/${taskId}_$timestamp$extension';
 
-      await supabase.storage.from('attachments').upload(uniqueFileName, file);
+      final dirPath = '$userId/';
 
-      final fileUrl = supabase.storage
-          .from('attachments')
-          .getPublicUrl(uniqueFileName);
+      // List everything in that user’s folder
+      final storage = supabase.storage.from('attachments');
+      final existing = await storage.list(path: dirPath);
 
-      final attachmentData = {
+      //  Build a candidate name, bumping “(1)”, “(2)”, etc if needed
+      String candidateName = '${taskId}_$timestamp$extension';
+      int counter = 1;
+      while (existing.any((f) => f.name == candidateName)) {
+        candidateName = '${taskId}_${timestamp}_($counter)$extension';
+        counter++;
+      }
+      final uniqueFileName = '$dirPath$candidateName';
+
+      await storage.upload(uniqueFileName, file);
+      final fileUrl = storage.getPublicUrl(uniqueFileName);
+
+      final dtoMap = {
         'task_id': taskId,
         'file_url': fileUrl,
         'type': type,
         'file_name': fileName,
         'created_at': DateTime.now().toIso8601String(),
       };
-
       final response = await supabase
           .from('attachments')
-          .insert(attachmentData)
+          .insert(dtoMap)
           .select()
           .single();
 
       return AttachmentDTO.fromMap(response);
     } catch (e) {
-      throw AttachmentException.uploadFailed(e);
+      throw AttachmentException.attachmentCreationFailure(e);
     }
   }
 
@@ -102,11 +112,11 @@ class AttachmentSupabaseDatasource implements AttachmentDatasource {
         fileUrlPath,
       ]);
       if (removeResult.isEmpty) {
-        throw AttachmentException.storageDeletionFailed('File not found');
+        throw AttachmentException.attachmentDeletionFailure('File not found');
       }
       await supabase.from('attachments').delete().eq('id', attachmentId);
     } catch (e) {
-      throw AttachmentException.storageDeletionFailed(e);
+      throw AttachmentException.attachmentDeletionFailure(e);
     }
   }
 }

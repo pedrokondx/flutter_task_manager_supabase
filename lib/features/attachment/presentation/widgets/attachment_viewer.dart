@@ -45,7 +45,9 @@ class _AttachmentViewerState extends State<AttachmentViewer> {
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           widget.attachment.fileName,
-          style: const TextStyle(color: Colors.white),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(color: Colors.white),
         ),
       ),
       body: Center(
@@ -106,14 +108,16 @@ class _AttachmentViewerState extends State<AttachmentViewer> {
                   ],
                 ),
               )
-            : const Column(
+            : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(color: Colors.white),
                   SizedBox(height: 16),
                   Text(
                     'Loading video...',
-                    style: TextStyle(color: Colors.white),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelMedium?.copyWith(color: Colors.white),
                   ),
                 ],
               ),

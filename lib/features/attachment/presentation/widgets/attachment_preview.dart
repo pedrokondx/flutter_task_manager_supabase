@@ -28,28 +28,32 @@ class AttachmentPreview extends StatelessWidget {
       children: [
         if (totalItems > 0) ...[
           const SizedBox(height: 8),
-          SizedBox(
-            height: 80,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: totalItems,
-              itemBuilder: (context, index) {
-                if (index < attachments.length) {
-                  return _buildAttachmentThumbnail(
-                    context,
-                    attachments[index],
-                    onDeleteAttachment,
-                    onViewAttachment,
-                  );
-                } else {
-                  final pendingIndex = index - attachments.length;
-                  return _buildPendingFileThumbnail(
-                    context,
-                    pendingFiles[pendingIndex],
-                    onDeletePendingFile,
-                  );
-                }
-              },
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: SizedBox(
+              key: ValueKey('${attachments.length}-${pendingFiles.length}'),
+              height: 80,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: totalItems,
+                itemBuilder: (context, index) {
+                  if (index < attachments.length) {
+                    return _buildAttachmentThumbnail(
+                      context,
+                      attachments[index],
+                      onDeleteAttachment,
+                      onViewAttachment,
+                    );
+                  } else {
+                    final pendingIndex = index - attachments.length;
+                    return _buildPendingFileThumbnail(
+                      context,
+                      pendingFiles[pendingIndex],
+                      onDeletePendingFile,
+                    );
+                  }
+                },
+              ),
             ),
           ),
         ] else
@@ -58,11 +62,17 @@ class AttachmentPreview extends StatelessWidget {
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.attachment, size: 48, color: Colors.grey[400]),
+                  Icon(
+                    Icons.attachment,
+                    size: 48,
+                    color: Theme.of(context).hintColor,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'No attachments yet',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).hintColor,
+                    ),
                   ),
                 ],
               ),
@@ -106,11 +116,11 @@ class AttachmentPreview extends StatelessWidget {
                     : Container(
                         width: 70,
                         height: 70,
-                        color: Colors.grey[200],
-                        child: const Icon(
+                        color: Theme.of(context).hintColor,
+                        child: Icon(
                           Icons.play_circle_filled,
                           size: 32,
-                          color: Colors.blue,
+                          color: Theme.of(context).primaryColor,
                         ),
                       ),
               ),

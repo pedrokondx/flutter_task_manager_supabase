@@ -28,23 +28,24 @@ class AttachmentException extends AppException {
     code: 'NOT_FOUND',
   );
 
-  factory AttachmentException.uploadFailed(Object inner) => AttachmentException(
-    message: 'Failed to upload file. Please try again.',
-    code: 'UPLOAD_FAILED',
-    inner: inner,
-  );
-
-  factory AttachmentException.datasourceError(Object inner) =>
+  factory AttachmentException.attachmentFetchFailure(Object inner) =>
       AttachmentException(
-        message: 'Failed to load data from server.',
-        code: 'DATASOURCE_ERROR',
+        message: 'Failed to fetch attachments.',
+        code: 'FETCH_FAILURE',
         inner: inner,
       );
 
-  factory AttachmentException.storageDeletionFailed(Object inner) =>
+  factory AttachmentException.attachmentCreationFailure(Object inner) =>
       AttachmentException(
-        message: 'Failed to delete file from storage.',
-        code: 'STORAGE_DELETE_FAILED',
+        message: 'Failed to create attachment.',
+        code: 'CREATION_FAILURE',
+        inner: inner,
+      );
+
+  factory AttachmentException.attachmentDeletionFailure(Object inner) =>
+      AttachmentException(
+        message: 'Failed to delete attachment.',
+        code: 'DELETION_FAILURE',
         inner: inner,
       );
 }
