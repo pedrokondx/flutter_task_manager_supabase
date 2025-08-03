@@ -19,6 +19,9 @@ class CategoryRepositoryImpl implements CategoryRepository {
       await datasource.createCategory(dto);
       return Right(unit);
     } catch (e) {
+      if (e is CategoryException) {
+        return Left(e);
+      }
       return Left(CategoryException.categoryCreationFailure(e));
     }
   }
@@ -32,6 +35,9 @@ class CategoryRepositoryImpl implements CategoryRepository {
       await datasource.updateCategory(dto);
       return Right(unit);
     } catch (e) {
+      if (e is CategoryException) {
+        return Left(e);
+      }
       return Left(CategoryException.categoryUpdateFailure(e));
     }
   }
@@ -45,6 +51,9 @@ class CategoryRepositoryImpl implements CategoryRepository {
       await datasource.deleteCategory(categoryId, userId);
       return Right(unit);
     } catch (e) {
+      if (e is CategoryException) {
+        return Left(e);
+      }
       return Left(CategoryException.categoryDeletionFailure(e));
     }
   }

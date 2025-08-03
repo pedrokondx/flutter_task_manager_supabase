@@ -4,10 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_todo/core/utils/snackbar_utils.dart';
 import 'package:supabase_todo/core/validators/title_validator.dart';
 import 'package:supabase_todo/core/domain/entities/category_entity.dart';
-import 'package:supabase_todo/features/category/presentation/bloc/category_bloc.dart';
-import 'package:supabase_todo/features/category/presentation/bloc/category_events.dart';
-import 'package:supabase_todo/features/category/presentation/bloc/category_state.dart';
+import 'package:supabase_todo/features/category/presentation/bloc/category_cubit.dart';
 import 'package:supabase_todo/core/ui/widgets/async_button.dart';
+import 'package:uuid/uuid.dart';
 
 class CategoryFormPage extends StatefulWidget {
   final String userId;
@@ -22,7 +21,7 @@ class CategoryFormPage extends StatefulWidget {
 class _CategoryFormPageState extends State<CategoryFormPage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
-  bool _isLoading = false;
+  final Uuid _uuid = const Uuid();
 
   @override
   void initState() {
@@ -36,39 +35,36 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
     super.dispose();
   }
 
-  void _saveTask() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+  void _saveCategory() {
+    if (!_formKey.currentState!.validate()) return;
 
-      final now = DateTime.now();
-      final newCategory = CategoryEntity(
-        id: widget.category?.id ?? '',
-        userId: widget.userId,
-        name: _titleController.text.trim(),
-        createdAt: widget.category?.createdAt ?? now,
-        updatedAt: now,
-      );
+    final now = DateTime.now();
+    final newCategory = CategoryEntity(
+      id: widget.category?.id ?? _uuid.v4(),
+      userId: widget.userId,
+      name: _titleController.text.trim(),
+      createdAt: widget.category?.createdAt ?? now,
+      updatedAt: now,
+    );
 
-      if (widget.category == null) {
-        context.read<CategoryBloc>().add(CreateCategoryEvent(newCategory));
-      } else {
-        context.read<CategoryBloc>().add(UpdateCategoryEvent(newCategory));
-      }
+    final cubit = context.read<CategoryCubit>();
+    if (widget.category == null) {
+      cubit.create(newCategory);
+    } else {
+      cubit.update(newCategory);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<CategoryBloc, CategoryState>(
+    return BlocListener<CategoryCubit, CategoryState>(
       listener: (context, state) {
-        setState(() => _isLoading = false);
-
-        if (state is CategoryError) {
-          SnackbarUtils.showError(context, state.message);
-        } else if (state is CategoryLoaded) {
+        if (state.errorMessage != null) {
+          SnackbarUtils.showError(context, state.errorMessage!);
+        } else if (state.lastSuccessMessage != null) {
           final action = widget.category == null ? 'created' : 'updated';
           SnackbarUtils.showSuccess(context, 'Category $action successfully!');
-          Navigator.pop(context);
+          context.pop();
         }
       },
       child: Scaffold(
@@ -93,23 +89,29 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Title',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: TitleValidator.validate,
-                  enabled: !_isLoading,
+                BlocBuilder<CategoryCubit, CategoryState>(
+                  builder: (context, state) {
+                    final isSubmitting = state.isSaving;
+                    return TextFormField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(labelText: 'Title'),
+                      validator: TitleValidator.validate,
+                      enabled: !isSubmitting,
+                    );
+                  },
                 ),
-
                 const SizedBox(height: 24),
-                AsyncButton(
-                  label: widget.category == null
-                      ? 'Create Category'
-                      : 'Update Category',
-                  isLoading: _isLoading,
-                  onPressed: _saveTask,
+                BlocBuilder<CategoryCubit, CategoryState>(
+                  builder: (context, state) {
+                    final isLoading = state.isSaving;
+                    return AsyncButton(
+                      label: widget.category == null
+                          ? 'Create Category'
+                          : 'Update Category',
+                      isLoading: isLoading,
+                      onPressed: _saveCategory,
+                    );
+                  },
                 ),
               ],
             ),

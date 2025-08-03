@@ -33,4 +33,10 @@ class CategoryException extends AppException {
         message: 'No category found with ID $id for user $userId',
         code: 'CATEGORY_NOT_FOUND',
       );
+
+  factory CategoryException.categoryAlreadyExists(String name) =>
+      CategoryException(
+        message: 'Category with name "$name" already exists',
+        code: 'CATEGORY_ALREADY_EXISTS',
+      );
 }

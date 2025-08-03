@@ -91,8 +91,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeleteTaskUsecase(sl()));
 
   sl.registerLazySingleton(() => GetCategoriesUsecase(sl()));
-  sl.registerLazySingleton(() => CreateCategoryUsecase(sl()));
-  sl.registerLazySingleton(() => UpdateCategoryUsecase(sl()));
+  sl.registerLazySingleton(() => CreateCategoryUsecase(sl(), sl()));
+  sl.registerLazySingleton(() => UpdateCategoryUsecase(sl(), sl()));
   sl.registerLazySingleton(() => DeleteCategoryUsecase(sl()));
 
   sl.registerLazySingleton(() => GetAttachmentsUsecase(sl()));

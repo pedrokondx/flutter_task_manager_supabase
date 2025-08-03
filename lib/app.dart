@@ -5,7 +5,7 @@ import 'package:supabase_todo/core/router/router.dart';
 import 'package:supabase_todo/core/ui/theme/theme.dart';
 import 'package:supabase_todo/features/attachment/presentation/bloc/attachment_bloc.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:supabase_todo/features/category/presentation/bloc/category_bloc.dart';
+import 'package:supabase_todo/features/category/presentation/bloc/category_cubit.dart';
 import 'package:supabase_todo/features/task/presentation/cubit/task_cubit.dart';
 
 class MyApp extends StatelessWidget {
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
         BlocProvider(
-          create: (_) => CategoryBloc(
+          create: (_) => CategoryCubit(
             getCategories: di.sl(),
             createCategory: di.sl(),
             updateCategory: di.sl(),

@@ -18,6 +18,9 @@ class CategoryPreviewRepositoryImpl implements CategoryPreviewRepository {
       final dtos = await datasource.getCategories(userId);
       return Right(dtos.map((e) => e.toEntity()).toList());
     } catch (e) {
+      if (e is CategoryException) {
+        return Left(e);
+      }
       return Left(CategoryException.getCategoriesFailure(e));
     }
   }

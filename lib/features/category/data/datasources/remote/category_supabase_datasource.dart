@@ -11,11 +11,9 @@ class CategorySupabaseDatasource implements CategoryDatasource {
   @override
   Future<void> createCategory(CategoryDTO dto) async {
     try {
-      final categoryData = dto.toMap();
-      categoryData.remove('id');
       final response = await supabase
           .from('categories')
-          .insert(categoryData)
+          .insert(dto.toMap())
           .select();
       if (response.isEmpty) {
         throw CategoryException.categoryCreationFailure(
