@@ -42,3 +42,5 @@ class DeleteAttachmentEvent extends AttachmentEvent {
   @override
   List<Object?> get props => [attachmentId, taskId];
 }
+
+class ClearAttachmentsEvent extends AttachmentEvent {}

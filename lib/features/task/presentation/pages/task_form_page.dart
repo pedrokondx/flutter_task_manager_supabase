@@ -54,6 +54,8 @@ class _TaskFormPageState extends State<TaskFormPage> {
 
     if (widget.task != null) {
       context.read<AttachmentBloc>().add(LoadAttachmentsEvent(widget.task!.id));
+    } else {
+      context.read<AttachmentBloc>().add(ClearAttachmentsEvent());
     }
   }
 

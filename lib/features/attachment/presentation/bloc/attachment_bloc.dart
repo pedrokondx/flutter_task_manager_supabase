@@ -17,6 +17,7 @@ class AttachmentBloc extends Bloc<AttachmentEvent, AttachmentState> {
     on<LoadAttachmentsEvent>(_onLoadAttachments);
     on<CreateAttachmentEvent>(_onCreateAttachment);
     on<DeleteAttachmentEvent>(_onDeleteAttachment);
+    on<ClearAttachmentsEvent>(_onClearAttachments);
   }
   Future<void> _onLoadAttachments(
     LoadAttachmentsEvent event,
@@ -58,5 +59,12 @@ class AttachmentBloc extends Bloc<AttachmentEvent, AttachmentState> {
       emit(AttachmentOperationSuccess('Attachment deleted successfully'));
       add(LoadAttachmentsEvent(event.taskId));
     });
+  }
+
+  void _onClearAttachments(
+    ClearAttachmentsEvent event,
+    Emitter<AttachmentState> emit,
+  ) {
+    emit(AttachmentsLoaded("", []));
   }
 }
