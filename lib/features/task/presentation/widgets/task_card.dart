@@ -21,22 +21,9 @@ class TaskCard extends StatefulWidget {
 }
 
 class _TaskCardState extends State<TaskCard> {
-  Color _getStatusColor(TaskStatus status) {
-    switch (status) {
-      case TaskStatus.toDo:
-        return Colors.orange;
-      case TaskStatus.inProgress:
-        return Colors.blue;
-      case TaskStatus.done:
-        return Colors.green;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
         onTap: widget.onTap,
         child: Padding(
@@ -50,7 +37,7 @@ class _TaskCardState extends State<TaskCard> {
                     child: Text(
                       widget.task.title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        decoration: widget.task.status == 'done'
+                        decoration: widget.task.status == TaskStatus.done
                             ? TextDecoration.lineThrough
                             : null,
                       ),
@@ -69,9 +56,9 @@ class _TaskCardState extends State<TaskCard> {
                 const SizedBox(height: 8),
                 Text(
                   widget.task.description!,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).hintColor,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -87,22 +74,20 @@ class _TaskCardState extends State<TaskCard> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(
-                        widget.task.status,
-                      ).withValues(alpha: 0.1),
+                      color: widget.task.status.getStatusColor.withValues(
+                        alpha: 0.1,
+                      ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _getStatusColor(
-                          widget.task.status,
-                        ).withValues(alpha: 0.3),
+                        color: widget.task.status.getStatusColor.withValues(
+                          alpha: 0.3,
+                        ),
                       ),
                     ),
                     child: Text(
                       widget.task.status.toReadableString,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _getStatusColor(widget.task.status),
-                        fontWeight: FontWeight.w500,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: widget.task.status.getStatusColor,
                       ),
                     ),
                   ),
@@ -123,11 +108,9 @@ class _TaskCardState extends State<TaskCard> {
                       ),
                       child: Text(
                         widget.categoryName!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.purple,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.labelMedium?.copyWith(color: Colors.purple),
                       ),
                     ),
                   ],
@@ -135,11 +118,17 @@ class _TaskCardState extends State<TaskCard> {
                   const Spacer(),
 
                   if (widget.task.dueDate != null) ...[
-                    Icon(Icons.schedule, size: 14, color: Colors.grey[600]),
+                    Icon(
+                      Icons.schedule,
+                      size: 16,
+                      color: Theme.of(context).hintColor,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       widget.task.dueDate!.toLocal().toString().split(' ')[0],
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Theme.of(context).hintColor,
+                      ),
                     ),
                   ],
                 ],

@@ -185,10 +185,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Title',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Title'),
                     validator: TitleValidator.validate,
                     enabled: !isLoading,
                   ),
@@ -197,7 +194,6 @@ class _TaskFormPageState extends State<TaskFormPage> {
                     controller: _descController,
                     decoration: const InputDecoration(
                       labelText: 'Description (optional)',
-                      border: OutlineInputBorder(),
                     ),
                     maxLines: 3,
                     enabled: !isLoading,
@@ -205,18 +201,17 @@ class _TaskFormPageState extends State<TaskFormPage> {
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: _status.value,
-                    decoration: const InputDecoration(
-                      labelText: 'Status',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'to_do', child: Text('To Do')),
-                      DropdownMenuItem(
-                        value: 'in_progress',
-                        child: Text('In Progress'),
-                      ),
-                      DropdownMenuItem(value: 'done', child: Text('Done')),
-                    ],
+                    decoration: const InputDecoration(labelText: 'Status'),
+                    items: TaskStatus.toMap()
+                        .map(
+                          (key, value) => MapEntry(
+                            key,
+                            DropdownMenuItem(value: key, child: Text(value)),
+                          ),
+                        )
+                        .values
+                        .toList(),
+
                     onChanged: isLoading
                         ? null
                         : (v) => setState(
@@ -228,7 +223,6 @@ class _TaskFormPageState extends State<TaskFormPage> {
                     value: _category.isEmpty ? null : _category,
                     decoration: const InputDecoration(
                       labelText: 'Category (optional)',
-                      border: OutlineInputBorder(),
                     ),
                     items: [
                       const DropdownMenuItem(

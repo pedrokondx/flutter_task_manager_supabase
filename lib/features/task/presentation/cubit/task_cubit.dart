@@ -77,10 +77,8 @@ class TaskCubit extends Cubit<TaskState> {
   }
 
   Future<void> create(TaskEntity task) async {
-    final updatedTasks = [task, ...state.tasks];
     emit(
       state.copyWith(
-        tasks: updatedTasks,
         isSaving: true,
         errorMessage: null,
         lastSuccessMessage: null,
@@ -99,6 +97,7 @@ class TaskCubit extends Cubit<TaskState> {
         );
       },
       (_) {
+        final updatedTasks = [task, ...state.tasks];
         emit(
           state.copyWith(
             tasks: updatedTasks,
@@ -112,10 +111,8 @@ class TaskCubit extends Cubit<TaskState> {
   }
 
   Future<void> update(TaskEntity task) async {
-    final updatedTasks = [task, ...state.tasks.where((t) => t.id != task.id)];
     emit(
       state.copyWith(
-        tasks: updatedTasks,
         isSaving: true,
         errorMessage: null,
         lastSuccessMessage: null,
@@ -134,6 +131,10 @@ class TaskCubit extends Cubit<TaskState> {
         );
       },
       (_) {
+        final updatedTasks = [
+          task,
+          ...state.tasks.where((t) => t.id != task.id),
+        ];
         emit(
           state.copyWith(
             tasks: updatedTasks,
@@ -147,10 +148,8 @@ class TaskCubit extends Cubit<TaskState> {
   }
 
   Future<void> delete(String taskId, String userId) async {
-    final filtered = state.tasks.where((t) => t.id != taskId).toList();
     emit(
       state.copyWith(
-        tasks: filtered,
         isDeleting: true,
         errorMessage: null,
         lastSuccessMessage: null,
@@ -169,6 +168,7 @@ class TaskCubit extends Cubit<TaskState> {
         );
       },
       (_) {
+        final filtered = state.tasks.where((t) => t.id != taskId).toList();
         emit(
           state.copyWith(
             tasks: filtered,

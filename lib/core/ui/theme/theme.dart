@@ -33,6 +33,26 @@ class AppTheme {
         borderSide: BorderSide(color: _lightBlue, width: 2),
       ),
     ),
+    dropdownMenuTheme: DropdownMenuThemeData(
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      textStyle: TextStyle(fontSize: 16, color: Colors.black),
+    ),
+    cardTheme: CardThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        foregroundColor: _lightBlue,
+        backgroundColor: _lightBlue.withValues(alpha: 0.15),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    ),
+
     textTheme: const TextTheme(
       headlineLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
       headlineMedium: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),

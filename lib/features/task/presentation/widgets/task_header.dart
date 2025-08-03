@@ -28,63 +28,38 @@ class TaskHeader extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 today,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
               ),
             ],
           ),
           const Spacer(),
-          _IconAction(
-            icon: Icons.category_outlined,
-            tooltip: "Categories",
-            onPressed: onCategoryPressed,
+
+          const SizedBox(width: 8),
+          Tooltip(
+            message: "Categories",
+            child: IconButton(
+              onPressed: onCategoryPressed,
+              icon: Icon(Icons.category_outlined),
+            ),
           ),
           const SizedBox(width: 8),
-          _IconAction(
-            icon: Icons.logout,
-            tooltip: "Logout",
-            onPressed: onLogoutPressed,
+          Tooltip(
+            message: "Logout",
+            child: IconButton(
+              onPressed: onLogoutPressed,
+              icon: Icon(Icons.logout),
+            ),
           ),
           const SizedBox(width: 8),
-          _IconAction(
-            icon: Icons.add,
-            tooltip: "New Task",
-            onPressed: onNewTask,
+          Tooltip(
+            message: "New Task",
+            child: IconButton(onPressed: onNewTask, icon: Icon(Icons.add)),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _IconAction extends StatelessWidget {
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onPressed;
-
-  const _IconAction({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: IconButton(
-        onPressed: onPressed,
-        icon: Icon(icon),
-        color: Theme.of(context).colorScheme.primary,
-        style: IconButton.styleFrom(
-          backgroundColor: Theme.of(
-            context,
-          ).colorScheme.primary.withValues(alpha: 0.15),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
       ),
     );
   }

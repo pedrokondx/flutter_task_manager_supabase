@@ -23,10 +23,10 @@ class TaskListPage extends StatefulWidget {
 
 class _TaskListPageState extends State<TaskListPage> {
   TaskStatus? selectedStatus; // null = all
-  String selectedCategory = 'Select category';
-  String selectedCategoryId = '';
+  String? selectedCategory;
+  String? selectedCategoryId;
   String textFilter = '';
-  final _debouncer = Debouncer(milliseconds: 250);
+  final _debouncer = Debouncer.short();
 
   @override
   void initState() {
@@ -48,7 +48,7 @@ class _TaskListPageState extends State<TaskListPage> {
           task.title.toLowerCase().contains(textFilter) ||
           (task.description ?? '').toLowerCase().contains(textFilter);
       final matchesCategory =
-          selectedCategory == 'Select category' && selectedCategoryId.isEmpty
+          selectedCategory == null && selectedCategoryId == null
           ? true
           : task.categoryId == selectedCategoryId;
 
@@ -147,28 +147,32 @@ class _TaskListPageState extends State<TaskListPage> {
                         ),
                         const SizedBox(height: 16),
                         FilterDropdowns(
+                          categories: categories
+                              .map((cat) => cat.name)
+                              .toList(),
                           selectedCategory: selectedCategory,
-                          selectedStatus: selectedStatus,
-                          categories: [
-                            "Select category",
-                            ...categories.map((cat) => cat.name),
-                          ],
-                          statusOptions: TaskStatus.toMap(),
                           onCategoryChanged: (val) => setState(() {
                             selectedCategory = val;
-                            selectedCategoryId = categories
-                                .firstWhere(
-                                  (cat) => cat.name == val,
-                                  orElse: () => CategoryEntity(
-                                    id: '',
-                                    name: '',
-                                    userId: '',
-                                    createdAt: DateTime.now(),
-                                    updatedAt: DateTime.now(),
-                                  ),
-                                )
-                                .id;
+                            if (val == null) {
+                              selectedCategoryId = null;
+                            } else {
+                              selectedCategoryId = categories
+                                  .firstWhere(
+                                    (cat) => cat.name == val,
+                                    orElse: () => CategoryEntity(
+                                      id: '',
+                                      name: '',
+                                      userId: '',
+                                      createdAt: DateTime.now(),
+                                      updatedAt: DateTime.now(),
+                                    ),
+                                  )
+                                  .id;
+                            }
                           }),
+
+                          statusOptions: TaskStatus.toMap(),
+                          selectedStatus: selectedStatus,
                           onStatusChanged: (val) =>
                               setState(() => selectedStatus = val),
                         ),

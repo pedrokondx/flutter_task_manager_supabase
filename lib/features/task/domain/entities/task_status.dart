@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum TaskStatus {
   toDo,
   inProgress,
@@ -28,6 +30,14 @@ enum TaskStatus {
       'in_progress' => TaskStatus.inProgress,
       'done' => TaskStatus.done,
       _ => TaskStatus.toDo,
+    };
+  }
+
+  MaterialColor get getStatusColor {
+    return switch (this) {
+      TaskStatus.toDo => Colors.orange,
+      TaskStatus.inProgress => Colors.blue,
+      TaskStatus.done => Colors.green,
     };
   }
 
