@@ -6,7 +6,7 @@ import 'package:supabase_todo/core/ui/theme/theme.dart';
 import 'package:supabase_todo/features/attachment/presentation/bloc/attachment_bloc.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:supabase_todo/features/category/presentation/bloc/category_bloc.dart';
-import 'package:supabase_todo/features/task/presentation/cubit/task_overview_cubit.dart';
+import 'package:supabase_todo/features/task/presentation/cubit/task_cubit.dart';
 
 class MyApp extends StatelessWidget {
   final AuthBloc authBloc;
@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider.value(value: authBloc),
         BlocProvider(
-          create: (_) => TaskOverviewCubit(
+          create: (_) => TaskCubit(
             getTasks: di.sl(),
             createTask: di.sl(),
             updateTask: di.sl(),

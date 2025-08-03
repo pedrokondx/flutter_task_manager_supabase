@@ -1,6 +1,6 @@
-part of 'task_overview_cubit.dart';
+part of 'task_cubit.dart';
 
-class TaskOverviewState extends Equatable {
+class TaskState extends Equatable {
   final List<TaskEntity> tasks;
   final List<CategoryEntity> categories;
   final bool isLoading;
@@ -9,7 +9,7 @@ class TaskOverviewState extends Equatable {
   final String? errorMessage;
   final String? lastSuccessMessage;
 
-  const TaskOverviewState({
+  const TaskState({
     this.tasks = const [],
     this.categories = const [],
     this.isLoading = false,
@@ -19,7 +19,7 @@ class TaskOverviewState extends Equatable {
     this.lastSuccessMessage,
   });
 
-  TaskOverviewState copyWith({
+  TaskState copyWith({
     List<TaskEntity>? tasks,
     List<CategoryEntity>? categories,
     bool? isLoading,
@@ -28,7 +28,7 @@ class TaskOverviewState extends Equatable {
     String? errorMessage,
     String? lastSuccessMessage,
   }) {
-    return TaskOverviewState(
+    return TaskState(
       tasks: tasks ?? this.tasks,
       categories: categories ?? this.categories,
       isLoading: isLoading ?? this.isLoading,

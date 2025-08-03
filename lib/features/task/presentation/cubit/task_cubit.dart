@@ -13,22 +13,22 @@ import 'package:supabase_todo/features/task/domain/usecases/delete_task_usecase.
 import 'package:supabase_todo/features/task/domain/exceptions/task_exception.dart';
 import 'package:supabase_todo/core/domain/exceptions/category_exception.dart';
 
-part 'task_overview_state.dart';
+part 'task_state.dart';
 
-class TaskOverviewCubit extends Cubit<TaskOverviewState> {
+class TaskCubit extends Cubit<TaskState> {
   final GetTasksUsecase getTasks;
   final GetCategoriesUsecase getCategories;
   final CreateTaskUsecase createTask;
   final UpdateTaskUsecase updateTask;
   final DeleteTaskUsecase deleteTask;
 
-  TaskOverviewCubit({
+  TaskCubit({
     required this.getTasks,
     required this.getCategories,
     required this.createTask,
     required this.updateTask,
     required this.deleteTask,
-  }) : super(const TaskOverviewState());
+  }) : super(const TaskState());
 
   Future<void> load(String userId) async {
     emit(

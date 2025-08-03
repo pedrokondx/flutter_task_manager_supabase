@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_todo/features/task/presentation/cubit/task_overview_cubit.dart';
+import 'package:supabase_todo/features/task/presentation/cubit/task_cubit.dart';
 import 'package:supabase_todo/features/task/presentation/widgets/due_date_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_todo/core/utils/dialog_utils.dart';
@@ -83,9 +83,9 @@ class _TaskFormPageState extends State<TaskFormPage> {
     );
 
     if (widget.task == null) {
-      context.read<TaskOverviewCubit>().create(newTask);
+      context.read<TaskCubit>().create(newTask);
     } else {
-      context.read<TaskOverviewCubit>().update(newTask);
+      context.read<TaskCubit>().update(newTask);
     }
 
     for (final file in _pendingFiles) {
@@ -110,7 +110,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<TaskOverviewCubit, TaskOverviewState>(
+    return BlocConsumer<TaskCubit, TaskState>(
       listenWhen: (previous, current) {
         if (previous.errorMessage != current.errorMessage) return true;
         if (previous.lastSuccessMessage != current.lastSuccessMessage) {

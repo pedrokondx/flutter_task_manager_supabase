@@ -8,7 +8,7 @@ import 'package:supabase_todo/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:supabase_todo/features/auth/presentation/bloc/auth_events.dart';
 import 'package:supabase_todo/features/task/domain/entities/task_entity.dart';
 import 'package:supabase_todo/features/task/domain/entities/task_status.dart';
-import 'package:supabase_todo/features/task/presentation/cubit/task_overview_cubit.dart';
+import 'package:supabase_todo/features/task/presentation/cubit/task_cubit.dart';
 import 'package:supabase_todo/features/task/presentation/widgets/filter_dropdowns.dart';
 import 'package:supabase_todo/features/task/presentation/widgets/task_card.dart';
 import 'package:supabase_todo/features/task/presentation/widgets/task_header.dart';
@@ -31,7 +31,7 @@ class _TaskListPageState extends State<TaskListPage> {
   @override
   void initState() {
     super.initState();
-    context.read<TaskOverviewCubit>().load(widget.userId);
+    context.read<TaskCubit>().load(widget.userId);
   }
 
   @override
@@ -63,7 +63,7 @@ class _TaskListPageState extends State<TaskListPage> {
         behavior: HitTestBehavior.translucent,
         onTap: () => FocusScope.of(context).unfocus(),
         child: SafeArea(
-          child: BlocBuilder<TaskOverviewCubit, TaskOverviewState>(
+          child: BlocBuilder<TaskCubit, TaskState>(
             builder: (context, state) {
               if (state.isLoading) {
                 return const Center(child: CircularProgressIndicator());
@@ -81,9 +81,8 @@ class _TaskListPageState extends State<TaskListPage> {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () => context.read<TaskOverviewCubit>().load(
-                          widget.userId,
-                        ),
+                        onPressed: () =>
+                            context.read<TaskCubit>().load(widget.userId),
                         child: const Text('Retry'),
                       ),
                     ],
@@ -115,9 +114,9 @@ class _TaskListPageState extends State<TaskListPage> {
                                   if (returned != null &&
                                       returned is TaskEntity) {
                                     if (context.mounted) {
-                                      context
-                                          .read<TaskOverviewCubit>()
-                                          .upsertLocal(returned);
+                                      context.read<TaskCubit>().upsertLocal(
+                                        returned,
+                                      );
                                     }
                                   }
                                 });
@@ -125,9 +124,7 @@ class _TaskListPageState extends State<TaskListPage> {
                           onCategoryPressed: () {
                             context.push('/categories').then((_) {
                               if (context.mounted) {
-                                context.read<TaskOverviewCubit>().load(
-                                  widget.userId,
-                                );
+                                context.read<TaskCubit>().load(widget.userId);
                               }
                             });
                           },
@@ -214,9 +211,9 @@ class _TaskListPageState extends State<TaskListPage> {
                                       if (returned != null &&
                                           returned is TaskEntity) {
                                         if (context.mounted) {
-                                          context
-                                              .read<TaskOverviewCubit>()
-                                              .upsertLocal(returned);
+                                          context.read<TaskCubit>().upsertLocal(
+                                            returned,
+                                          );
                                         }
                                       }
                                     }),
@@ -225,7 +222,7 @@ class _TaskListPageState extends State<TaskListPage> {
                                   'Delete Task',
                                   'Are you sure you want to delete "${task.title}"?',
                                   () {
-                                    context.read<TaskOverviewCubit>().delete(
+                                    context.read<TaskCubit>().delete(
                                       task.id,
                                       widget.userId,
                                     );
