@@ -27,12 +27,11 @@ class UpdateTaskUsecase {
         return Left(TaskException.taskAlreadyExists(task.title));
       }
 
-      await repository.updateTask(task);
-      return Right(unit);
+      return repository.updateTask(task);
     } catch (e) {
       if (e is TaskException) return Left(e);
 
-      return Left(TaskException.taskCreationFailed(e));
+      return Left(TaskException.taskUpdateFailed(e));
     }
   }
 }

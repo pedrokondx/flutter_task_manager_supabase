@@ -25,8 +25,7 @@ class CreateTaskUsecase {
         return Left(TaskException.taskAlreadyExists(task.title));
       }
 
-      await repository.createTask(task);
-      return Right(unit);
+      return repository.createTask(task);
     } catch (e) {
       if (e is TaskException) return Left(e);
       return Left(TaskException.taskCreationFailed(e));
