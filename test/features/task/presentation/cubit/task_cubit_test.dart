@@ -1,0 +1,296 @@
+import 'package:bloc_test/bloc_test.dart';
+import 'package:dartz/dartz.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:supabase_todo/features/task/data/dtos/task_dto.dart';
+
+import 'package:supabase_todo/features/task/domain/entities/task_entity.dart';
+import 'package:supabase_todo/features/task/domain/entities/task_status.dart';
+import 'package:supabase_todo/core/domain/entities/category_entity.dart';
+import 'package:supabase_todo/features/task/domain/exceptions/task_exception.dart';
+import 'package:supabase_todo/core/domain/exceptions/category_exception.dart';
+import 'package:supabase_todo/features/task/domain/usecases/create_task_usecase.dart';
+import 'package:supabase_todo/features/task/domain/usecases/update_task_usecase.dart';
+import 'package:supabase_todo/features/task/domain/usecases/delete_task_usecase.dart';
+import 'package:supabase_todo/features/task/domain/usecases/get_tasks_usecase.dart';
+import 'package:supabase_todo/core/domain/usecases/get_categories_usecase.dart';
+import 'package:supabase_todo/features/task/presentation/cubit/task_cubit.dart';
+
+import '../../../../core/fakes.dart';
+import '../../../../core/mocks.dart';
+import '../../fakes.dart';
+import '../../mocks.dart';
+
+TaskEntity makeTask({
+  String id = 't1',
+  String userId = 'user1',
+  String title = 'Task Title',
+}) {
+  final now = DateTime.now();
+  return TaskEntity(
+    id: id,
+    userId: userId,
+    title: title,
+    description: 'desc',
+    dueDate: now.add(const Duration(days: 1)),
+    categoryId: 'cat1',
+    status: TaskStatus.fromString('to_do'),
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
+CategoryEntity makeCategory({String id = 'cat1', String name = 'General'}) {
+  final now = DateTime.now();
+  return CategoryEntity(
+    id: id,
+    name: name,
+    userId: '',
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
+void main() {
+  late GetTasksUsecase getTasks;
+  late GetCategoriesUsecase getCategories;
+  late CreateTaskUsecase createTask;
+  late UpdateTaskUsecase updateTask;
+  late DeleteTaskUsecase deleteTask;
+  late MockTaskRepository mockTaskRepository;
+  late MockCategoryPreviewRepository mockCategoryPreviewRepository;
+  late TaskCubit cubit;
+
+  const userId = 'user1';
+  final task = makeTask();
+  final category = makeCategory();
+
+  setUpAll(() {
+    registerFallbackValue(FakeTaskEntity());
+    registerFallbackValue(FakeCategoryEntity());
+    registerFallbackValue(FakeTaskException());
+    registerFallbackValue(FakeCategoryException());
+  });
+
+  setUp(() {
+    mockTaskRepository = MockTaskRepository();
+    mockCategoryPreviewRepository = MockCategoryPreviewRepository();
+    getTasks = GetTasksUsecase(mockTaskRepository);
+    getCategories = GetCategoriesUsecase(mockCategoryPreviewRepository);
+    createTask = CreateTaskUsecase(mockTaskRepository);
+    updateTask = UpdateTaskUsecase(mockTaskRepository);
+    deleteTask = DeleteTaskUsecase(mockTaskRepository);
+
+    cubit = TaskCubit(
+      getTasks: getTasks,
+      getCategories: getCategories,
+      createTask: createTask,
+      updateTask: updateTask,
+      deleteTask: deleteTask,
+    );
+  });
+
+  group('load', () {
+    blocTest<TaskCubit, TaskState>(
+      'emits loading then populated on success',
+      build: () {
+        when(() => getTasks(userId)).thenAnswer((_) async => right([task]));
+        when(
+          () => getCategories(userId),
+        ).thenAnswer((_) async => right([category]));
+        return cubit;
+      },
+      act: (c) => cubit.load(userId),
+      expect: () => [
+        const TaskState(isLoading: true),
+        TaskState(isLoading: false, tasks: [task], categories: [category]),
+      ],
+      verify: (_) {
+        verify(() => getTasks(userId)).called(1);
+        verify(() => getCategories(userId)).called(1);
+      },
+    );
+
+    blocTest<TaskCubit, TaskState>(
+      'emits error when getTasks fails',
+      build: () {
+        when(() => getTasks(userId)).thenAnswer(
+          (_) async => left(TaskException.taskRetrievalFailed('fail')),
+        );
+        when(
+          () => getCategories(userId),
+        ).thenAnswer((_) async => right([category]));
+        return cubit;
+      },
+      act: (c) => cubit.load(userId),
+      expect: () => [
+        const TaskState(isLoading: true),
+        TaskState(isLoading: false, errorMessage: 'Task retrieval failed'),
+      ],
+    );
+
+    blocTest<TaskCubit, TaskState>(
+      'emits error when getCategories fails',
+      build: () {
+        when(() => getTasks(userId)).thenAnswer((_) async => right([task]));
+        when(() => getCategories(userId)).thenAnswer(
+          (_) async => left(CategoryException.getCategoriesFailure('err')),
+        );
+        return cubit;
+      },
+      act: (c) => cubit.load(userId),
+      expect: () => [
+        const TaskState(isLoading: true),
+        TaskState(isLoading: false, errorMessage: 'Failed to get categories'),
+      ],
+    );
+  });
+
+  group('create', () {
+    blocTest<TaskCubit, TaskState>(
+      'optimistically adds task and shows success message on success',
+      build: () {
+        when(() => createTask(task)).thenAnswer((_) async => right(unit));
+        return cubit;
+      },
+      seed: () => const TaskState(),
+      act: (c) => c.create(task),
+      expect: () => [
+        TaskState(tasks: [task], isSaving: true),
+        TaskState(
+          tasks: [task],
+          isSaving: false,
+          lastSuccessMessage: 'Task criada',
+        ),
+      ],
+    );
+
+    blocTest<TaskCubit, TaskState>(
+      'optimistically adds task and shows error on failure',
+      build: () {
+        when(() => createTask(task)).thenAnswer(
+          (_) async => left(TaskException.taskCreationFailed('bad')),
+        );
+        return cubit;
+      },
+      seed: () => const TaskState(),
+      act: (c) => c.create(task),
+      expect: () => [
+        TaskState(tasks: [task], isSaving: true),
+        TaskState(
+          tasks: [task],
+          isSaving: false,
+          errorMessage: 'Task creation failed',
+        ),
+      ],
+    );
+  });
+
+  group('update', () {
+    final updated = TaskDTO.fromEntity(
+      task,
+    ).copyWith(title: 'Changed Title').toEntity();
+
+    blocTest<TaskCubit, TaskState>(
+      'optimistically updates task and shows success message',
+      build: () {
+        when(() => updateTask(updated)).thenAnswer((_) async => right(unit));
+        return cubit;
+      },
+      seed: () => TaskState(tasks: [task]),
+      act: (c) => c.update(updated),
+      expect: () => [
+        TaskState(tasks: [updated], isSaving: true),
+        TaskState(
+          tasks: [updated],
+          isSaving: false,
+          lastSuccessMessage: 'Task atualizada',
+        ),
+      ],
+    );
+
+    blocTest<TaskCubit, TaskState>(
+      'optimistically updates task and shows error on failure',
+      build: () {
+        when(
+          () => updateTask(updated),
+        ).thenAnswer((_) async => left(TaskException.taskUpdateFailed('fail')));
+        return cubit;
+      },
+      seed: () => TaskState(tasks: [task]),
+      act: (c) => c.update(updated),
+      expect: () => [
+        TaskState(tasks: [updated], isSaving: true),
+        TaskState(
+          tasks: [updated],
+          isSaving: false,
+          errorMessage: 'Task update failed',
+        ),
+      ],
+    );
+  });
+
+  group('delete', () {
+    blocTest<TaskCubit, TaskState>(
+      'optimistically removes and shows success',
+      build: () {
+        when(
+          () => deleteTask(task.id, userId),
+        ).thenAnswer((_) async => right(unit));
+        return cubit;
+      },
+      seed: () => TaskState(tasks: [task]),
+      act: (c) => c.delete(task.id, userId),
+      expect: () => [
+        TaskState(tasks: [], isDeleting: true),
+        TaskState(
+          tasks: [],
+          isDeleting: false,
+          lastSuccessMessage: 'Task deletada',
+        ),
+      ],
+    );
+
+    blocTest<TaskCubit, TaskState>(
+      'optimistically removes and shows error on failure (restores list except optimistic removal persists per implementation)',
+      build: () {
+        when(() => deleteTask(task.id, userId)).thenAnswer(
+          (_) async => left(TaskException.taskDeletionFailed('oops')),
+        );
+        return cubit;
+      },
+      seed: () => TaskState(tasks: [task]),
+      act: (c) => c.delete(task.id, userId),
+      expect: () => [
+        TaskState(tasks: [], isDeleting: true),
+        TaskState(
+          tasks: [],
+          isDeleting: false,
+          errorMessage: 'Task deletion failed',
+        ),
+      ],
+    );
+  });
+
+  group('upsertLocal', () {
+    final existing = makeTask(id: 't2');
+    final newTask = makeTask(id: 't3');
+
+    test('adds new task to front without calling usecase', () {
+      final initial = TaskState(tasks: [existing]);
+      cubit.emit(initial);
+      cubit.upsertLocal(newTask);
+      expect(cubit.state.tasks.first, newTask);
+      expect(cubit.state.tasks.length, 2);
+    });
+
+    test('replaces existing with same id', () {
+      final modified = makeTask(id: 't2', title: 'changed');
+      final initial = TaskState(tasks: [existing]);
+      cubit.emit(initial);
+      cubit.upsertLocal(modified);
+      expect(cubit.state.tasks.first.title, 'changed');
+      expect(cubit.state.tasks.length, 1);
+    });
+  });
+}
