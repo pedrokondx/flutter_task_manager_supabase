@@ -18,6 +18,9 @@ class TaskRepositoryImpl implements TaskRepository {
       final dtos = await datasource.getTasks(userId);
       return Right(dtos.map((e) => e.toEntity()).toList());
     } catch (e) {
+      if (e is TaskException) {
+        return Left(e);
+      }
       return Left(TaskException.taskRetrievalFailed(e));
     }
   }
@@ -31,6 +34,9 @@ class TaskRepositoryImpl implements TaskRepository {
 
       return Right(unit);
     } catch (e) {
+      if (e is TaskException) {
+        return Left(e);
+      }
       return Left(TaskException.taskCreationFailed(e));
     }
   }
@@ -42,6 +48,9 @@ class TaskRepositoryImpl implements TaskRepository {
       await datasource.updateTask(dto);
       return Right(unit);
     } catch (e) {
+      if (e is TaskException) {
+        return Left(e);
+      }
       return Left(TaskException.taskUpdateFailed(e));
     }
   }
@@ -55,6 +64,9 @@ class TaskRepositoryImpl implements TaskRepository {
       await datasource.deleteTask(taskId, userId);
       return Right(unit);
     } catch (e) {
+      if (e is TaskException) {
+        return Left(e);
+      }
       return Left(TaskException.taskDeletionFailed(e));
     }
   }
