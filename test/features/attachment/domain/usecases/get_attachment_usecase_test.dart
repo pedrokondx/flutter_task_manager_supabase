@@ -44,14 +44,14 @@ void main() {
 
   test('should return Left when repository fails', () async {
     when(() => repository.getAttachments(taskId)).thenAnswer(
-      (_) async => Left(AttachmentException.datasourceError('erro')),
+      (_) async => Left(AttachmentException.attachmentFetchFailure('erro')),
     );
 
     final result = await usecase.call(taskId);
 
     expect(result.isLeft(), true);
     result.fold(
-      (failure) => expect(failure.code, 'DATASOURCE_ERROR'),
+      (failure) => expect(failure.code, 'FETCH_FAILURE'),
       (_) => fail('Esperava falha'),
     );
   });

@@ -17,7 +17,7 @@ import '../../fakes.dart';
 import '../../mocks.dart';
 
 void main() {
-  group('AttachmentBloc', () {
+  group('AttachmentBloc (new behavior)', () {
     late MockAttachmentRepository mockRepository;
     late MockFileValidationService mockValidationService;
     late CreateAttachmentUsecase createUsecase;
@@ -25,7 +25,6 @@ void main() {
     late DeleteAttachmentUsecase deleteUsecase;
     late AttachmentBloc bloc;
 
-    // Test data constants
     const taskId = 'task1';
     const userId = 'user1';
     const attachmentId = 'a1';
@@ -67,7 +66,7 @@ void main() {
 
     group('LoadAttachmentsEvent', () {
       blocTest<AttachmentBloc, AttachmentState>(
-        'should emit [AttachmentsLoading, AttachmentsLoaded] when loading attachments succeeds',
+        'emits [AttachmentsLoading, AttachmentsLoaded] when loading succeeds',
         setUp: () {
           when(
             () => mockRepository.getAttachments(taskId),
@@ -82,11 +81,13 @@ void main() {
       );
 
       blocTest<AttachmentBloc, AttachmentState>(
-        'should emit [AttachmentsLoading, AttachmentError] when loading attachments fails',
+        'emits [AttachmentsLoading, AttachmentError] when loading fails',
         setUp: () {
           when(() => mockRepository.getAttachments(taskId)).thenAnswer(
             (_) async => Left(
-              AttachmentException.datasourceError('Database connection failed'),
+              AttachmentException.attachmentFetchFailure(
+                'Failed to fetch attachments',
+              ),
             ),
           );
         },
@@ -94,16 +95,15 @@ void main() {
         act: (bloc) => bloc.add(LoadAttachmentsEvent(taskId)),
         expect: () => [
           AttachmentsLoading(),
-          AttachmentError('Failed to load data from server.'),
+          AttachmentError('Failed to fetch attachments.'),
         ],
       );
     });
 
     group('CreateAttachmentEvent', () {
       blocTest<AttachmentBloc, AttachmentState>(
-        'should emit correct sequence when creating attachment succeeds and reloads',
+        'appends new attachment when creation succeeds from empty state',
         setUp: () {
-          // Mock successful validation
           when(
             () => mockValidationService.validateFile(
               filePath: any(named: 'filePath'),
@@ -112,7 +112,6 @@ void main() {
             ),
           ).thenAnswer((_) async {});
 
-          // Mock successful creation
           when(
             () => mockRepository.createAttachment(
               userId: userId,
@@ -122,11 +121,6 @@ void main() {
               fileName: any(named: 'fileName'),
             ),
           ).thenAnswer((_) async => Right(sampleAttachment));
-
-          // Mock successful reload
-          when(
-            () => mockRepository.getAttachments(taskId),
-          ).thenAnswer((_) async => Right(attachmentsList));
         },
         build: () => bloc,
         act: (bloc) => bloc.add(
@@ -139,13 +133,10 @@ void main() {
           ),
         ),
         expect: () => [
-          AttachmentOperationLoading(),
           AttachmentOperationSuccess('Attachment added successfully'),
-          AttachmentsLoading(),
-          AttachmentsLoaded(taskId, attachmentsList),
+          AttachmentsLoaded(taskId, [sampleAttachment]),
         ],
         verify: (bloc) {
-          // Verify validation was called
           verify(
             () => mockValidationService.validateFile(
               filePath: testFile.path,
@@ -153,8 +144,6 @@ void main() {
               fileName: fileName,
             ),
           ).called(1);
-
-          // Verify repository methods were called with correct parameters
           verify(
             () => mockRepository.createAttachment(
               userId: userId,
@@ -165,14 +154,64 @@ void main() {
             ),
           ).called(1);
 
-          verify(() => mockRepository.getAttachments(taskId)).called(1);
+          verifyNever(() => mockRepository.getAttachments(any()));
         },
       );
 
       blocTest<AttachmentBloc, AttachmentState>(
-        'should emit [AttachmentOperationLoading, AttachmentError] when creating attachment fails',
+        'appends new attachment when creation succeeds from existing loaded state',
+        seed: () => AttachmentsLoaded(taskId, attachmentsList),
         setUp: () {
-          // Mock successful validation
+          when(
+            () => mockValidationService.validateFile(
+              filePath: any(named: 'filePath'),
+              type: any(named: 'type'),
+              fileName: any(named: 'fileName'),
+            ),
+          ).thenAnswer((_) async {});
+
+          final another = AttachmentEntity(
+            id: 'a2',
+            taskId: taskId,
+            fileUrl: 'https://example.com/file2.jpg',
+            type: fileType,
+            fileName: 'other.jpg',
+            createdAt: DateTime.now(),
+          );
+
+          when(
+            () => mockRepository.createAttachment(
+              userId: userId,
+              taskId: taskId,
+              file: any(named: 'file'),
+              type: any(named: 'type'),
+              fileName: any(named: 'fileName'),
+            ),
+          ).thenAnswer((_) async => Right(another));
+        },
+        build: () => bloc,
+        act: (bloc) => bloc.add(
+          CreateAttachmentEvent(
+            userId: userId,
+            taskId: taskId,
+            file: testFile,
+            type: fileType,
+            fileName: fileName,
+          ),
+        ),
+        expect: () => [
+          AttachmentOperationSuccess('Attachment added successfully'),
+          isA<AttachmentsLoaded>().having(
+            (s) => s.attachments.map((a) => a.id).toList(),
+            'attachment ids',
+            ['a1', 'a2'],
+          ),
+        ],
+      );
+
+      blocTest<AttachmentBloc, AttachmentState>(
+        'emits [AttachmentError] when creation fails after successful validation',
+        setUp: () {
           when(
             () => mockValidationService.validateFile(
               filePath: any(named: 'filePath'),
@@ -190,8 +229,11 @@ void main() {
               fileName: any(named: 'fileName'),
             ),
           ).thenAnswer(
-            (_) async =>
-                Left(AttachmentException.uploadFailed('Network timeout')),
+            (_) async => Left(
+              AttachmentException.attachmentCreationFailure(
+                'Failed to create attachment.',
+              ),
+            ),
           );
         },
         build: () => bloc,
@@ -204,10 +246,7 @@ void main() {
             fileName: fileName,
           ),
         ),
-        expect: () => [
-          AttachmentOperationLoading(),
-          AttachmentError('Failed to upload file. Please try again.'),
-        ],
+        expect: () => [AttachmentError('Failed to create attachment.')],
         verify: (bloc) {
           verify(
             () => mockValidationService.validateFile(
@@ -216,7 +255,6 @@ void main() {
               fileName: fileName,
             ),
           ).called(1);
-
           verify(
             () => mockRepository.createAttachment(
               userId: userId,
@@ -226,107 +264,13 @@ void main() {
               fileName: fileName,
             ),
           ).called(1);
-
-          // Verify that getAttachments was NOT called on failure
           verifyNever(() => mockRepository.getAttachments(any()));
         },
       );
-    });
-
-    group('DeleteAttachmentEvent', () {
-      blocTest<AttachmentBloc, AttachmentState>(
-        'should emit correct sequence when deleting attachment succeeds and reloads',
-        setUp: () {
-          // Mock successful deletion
-          when(
-            () => mockRepository.deleteAttachment(attachmentId),
-          ).thenAnswer((_) async => const Right(null));
-
-          // Mock successful reload (empty list after deletion)
-          when(
-            () => mockRepository.getAttachments(taskId),
-          ).thenAnswer((_) async => const Right([]));
-        },
-        build: () => bloc,
-        act: (bloc) => bloc.add(
-          DeleteAttachmentEvent(attachmentId: attachmentId, taskId: taskId),
-        ),
-        expect: () => [
-          AttachmentOperationLoading(),
-          AttachmentOperationSuccess('Attachment deleted successfully'),
-          AttachmentsLoading(),
-          AttachmentsLoaded(taskId, const []),
-        ],
-        verify: (bloc) {
-          verify(() => mockRepository.deleteAttachment(attachmentId)).called(1);
-          verify(() => mockRepository.getAttachments(taskId)).called(1);
-        },
-      );
 
       blocTest<AttachmentBloc, AttachmentState>(
-        'should emit [AttachmentOperationLoading, AttachmentError] when deleting attachment fails',
+        'emits error when validation fails (file too large)',
         setUp: () {
-          when(() => mockRepository.deleteAttachment(attachmentId)).thenAnswer(
-            (_) async => Left(AttachmentException.storageDeletionFailed("")),
-          );
-        },
-        build: () => bloc,
-        act: (bloc) => bloc.add(
-          DeleteAttachmentEvent(attachmentId: attachmentId, taskId: taskId),
-        ),
-        expect: () => [
-          AttachmentOperationLoading(),
-          AttachmentError('Failed to delete file from storage.'),
-        ],
-        verify: (bloc) {
-          verify(() => mockRepository.deleteAttachment(attachmentId)).called(1);
-
-          // Verify that getAttachments was NOT called on failure
-          verifyNever(() => mockRepository.getAttachments(any()));
-        },
-      );
-    });
-
-    group('Edge Cases and Validation', () {
-      blocTest<AttachmentBloc, AttachmentState>(
-        'should handle empty attachments list correctly',
-        setUp: () {
-          when(
-            () => mockRepository.getAttachments(taskId),
-          ).thenAnswer((_) async => const Right([]));
-        },
-        build: () => bloc,
-        act: (bloc) => bloc.add(LoadAttachmentsEvent(taskId)),
-        expect: () => [
-          AttachmentsLoading(),
-          AttachmentsLoaded(taskId, const []),
-        ],
-      );
-
-      blocTest<AttachmentBloc, AttachmentState>(
-        'should handle multiple rapid events correctly',
-        setUp: () {
-          when(
-            () => mockRepository.getAttachments(taskId),
-          ).thenAnswer((_) async => Right(attachmentsList));
-        },
-        build: () => bloc,
-        act: (bloc) {
-          bloc.add(LoadAttachmentsEvent(taskId));
-          bloc.add(LoadAttachmentsEvent(taskId));
-        },
-        expect: () => [
-          AttachmentsLoading(),
-          AttachmentsLoaded(taskId, attachmentsList),
-          AttachmentsLoading(),
-          AttachmentsLoaded(taskId, attachmentsList),
-        ],
-      );
-
-      blocTest<AttachmentBloc, AttachmentState>(
-        'should handle file too large validation error',
-        setUp: () {
-          // Mock validation service to throw file too large exception
           when(
             () => mockValidationService.validateFile(
               filePath: any(named: 'filePath'),
@@ -345,10 +289,7 @@ void main() {
             fileName: fileName,
           ),
         ),
-        expect: () => [
-          AttachmentOperationLoading(),
-          AttachmentError('File size exceeds 50MB limit'),
-        ],
+        expect: () => [AttachmentError('File size exceeds 50MB limit')],
         verify: (bloc) {
           verify(
             () => mockValidationService.validateFile(
@@ -357,8 +298,6 @@ void main() {
               fileName: fileName,
             ),
           ).called(1);
-
-          // Verify repository was NOT called due to validation failure
           verifyNever(
             () => mockRepository.createAttachment(
               userId: any(named: 'userId'),
@@ -372,9 +311,8 @@ void main() {
       );
 
       blocTest<AttachmentBloc, AttachmentState>(
-        'should handle invalid file extension error',
+        'emits error when validation fails (invalid extension)',
         setUp: () {
-          // Mock validation service to throw invalid extension exception
           when(
             () => mockValidationService.validateFile(
               filePath: any(named: 'filePath'),
@@ -390,11 +328,10 @@ void main() {
             taskId: taskId,
             file: testFile,
             type: fileType,
-            fileName: 'malware.exe', // This will trigger the validation error
+            fileName: 'malware.exe',
           ),
         ),
         expect: () => [
-          AttachmentOperationLoading(),
           AttachmentError('File extension .exe not allowed for type image'),
         ],
         verify: (bloc) {
@@ -405,8 +342,6 @@ void main() {
               fileName: 'malware.exe',
             ),
           ).called(1);
-
-          // Verify repository was NOT called due to validation failure
           verifyNever(
             () => mockRepository.createAttachment(
               userId: any(named: 'userId'),
@@ -420,9 +355,8 @@ void main() {
       );
 
       blocTest<AttachmentBloc, AttachmentState>(
-        'should handle empty file validation error',
+        'emits error when validation fails (empty file)',
         setUp: () {
-          // Mock validation service to throw empty file exception
           when(
             () => mockValidationService.validateFile(
               filePath: any(named: 'filePath'),
@@ -441,16 +375,12 @@ void main() {
             fileName: fileName,
           ),
         ),
-        expect: () => [
-          AttachmentOperationLoading(),
-          AttachmentError('File is empty'),
-        ],
+        expect: () => [AttachmentError('File is empty')],
       );
 
       blocTest<AttachmentBloc, AttachmentState>(
-        'should handle unsupported file type validation error',
+        'emits error when validation fails (unsupported type)',
         setUp: () {
-          // Mock validation service to throw unsupported type exception
           when(
             () => mockValidationService.validateFile(
               filePath: any(named: 'filePath'),
@@ -465,18 +395,60 @@ void main() {
             userId: userId,
             taskId: taskId,
             file: testFile,
-            type: 'audio', // Unsupported type
+            type: 'audio',
             fileName: 'song.mp3',
           ),
         ),
+        expect: () => [AttachmentError('Unsupported file type: audio')],
+      );
+    });
+
+    group('DeleteAttachmentEvent', () {
+      blocTest<AttachmentBloc, AttachmentState>(
+        'removes attachment when deletion succeeds from loaded state',
+        seed: () => AttachmentsLoaded(taskId, attachmentsList),
+        setUp: () {
+          when(
+            () => mockRepository.deleteAttachment(attachmentId),
+          ).thenAnswer((_) async => const Right(null));
+        },
+        build: () => bloc,
+        act: (bloc) => bloc.add(
+          DeleteAttachmentEvent(attachmentId: attachmentId, taskId: taskId),
+        ),
         expect: () => [
-          AttachmentOperationLoading(),
-          AttachmentError('Unsupported file type: audio'),
+          AttachmentOperationSuccess('Attachment deleted successfully'),
+          AttachmentsLoaded(taskId, const []),
         ],
+        verify: (bloc) {
+          verify(() => mockRepository.deleteAttachment(attachmentId)).called(1);
+          verifyNever(() => mockRepository.getAttachments(any()));
+        },
       );
 
       blocTest<AttachmentBloc, AttachmentState>(
-        'should handle attachment not found error during deletion',
+        'emits error when deletion fails',
+        seed: () => AttachmentsLoaded(taskId, attachmentsList),
+        setUp: () {
+          when(() => mockRepository.deleteAttachment(attachmentId)).thenAnswer(
+            (_) async =>
+                Left(AttachmentException.attachmentDeletionFailure("fail")),
+          );
+        },
+        build: () => bloc,
+        act: (bloc) => bloc.add(
+          DeleteAttachmentEvent(attachmentId: attachmentId, taskId: taskId),
+        ),
+        expect: () => [AttachmentError('Failed to delete attachment.')],
+        verify: (bloc) {
+          verify(() => mockRepository.deleteAttachment(attachmentId)).called(1);
+          verifyNever(() => mockRepository.getAttachments(any()));
+        },
+      );
+
+      blocTest<AttachmentBloc, AttachmentState>(
+        'emits error when attachment not found during deletion',
+        seed: () => AttachmentsLoaded(taskId, attachmentsList),
         setUp: () {
           when(
             () => mockRepository.deleteAttachment(attachmentId),
@@ -486,9 +458,38 @@ void main() {
         act: (bloc) => bloc.add(
           DeleteAttachmentEvent(attachmentId: attachmentId, taskId: taskId),
         ),
+        expect: () => [AttachmentError('Attachment not found')],
+      );
+    });
+
+    group('ClearAttachmentsEvent', () {
+      blocTest<AttachmentBloc, AttachmentState>(
+        'clears attachments regardless of previous state',
+        seed: () => AttachmentsLoaded(taskId, attachmentsList),
+        build: () => bloc,
+        act: (bloc) => bloc.add(ClearAttachmentsEvent()),
+        expect: () => [AttachmentsLoaded("", [])],
+      );
+    });
+
+    group('Edge Cases', () {
+      blocTest<AttachmentBloc, AttachmentState>(
+        'handles multiple rapid LoadAttachmentsEvent correctly',
+        setUp: () {
+          when(
+            () => mockRepository.getAttachments(taskId),
+          ).thenAnswer((_) async => Right(attachmentsList));
+        },
+        build: () => bloc,
+        act: (bloc) {
+          bloc.add(LoadAttachmentsEvent(taskId));
+          bloc.add(LoadAttachmentsEvent(taskId));
+        },
         expect: () => [
-          AttachmentOperationLoading(),
-          AttachmentError('Attachment not found'),
+          AttachmentsLoading(),
+          AttachmentsLoaded(taskId, attachmentsList),
+          AttachmentsLoading(),
+          AttachmentsLoaded(taskId, attachmentsList),
         ],
       );
     });

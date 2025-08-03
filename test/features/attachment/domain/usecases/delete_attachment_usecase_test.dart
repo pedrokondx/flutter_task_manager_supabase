@@ -29,14 +29,14 @@ void main() {
 
   test('should return Left when repository fails', () async {
     when(() => repository.deleteAttachment(attachmentId)).thenAnswer(
-      (_) async => Left(AttachmentException.storageDeletionFailed('x')),
+      (_) async => Left(AttachmentException.attachmentDeletionFailure('x')),
     );
 
     final result = await usecase.call(attachmentId: attachmentId);
 
     expect(result.isLeft(), true);
     result.fold(
-      (failure) => expect(failure.code, 'STORAGE_DELETE_FAILED'),
+      (failure) => expect(failure.code, 'DELETION_FAILURE'),
       (_) => fail('Esperava falha'),
     );
   });
