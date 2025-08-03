@@ -48,16 +48,23 @@ void main() {
   group('UpdateTaskUsecase', () {
     test('returns right(Unit) when update succeeds', () async {
       when(
+        () => repository.getTasks(task.userId),
+      ).thenAnswer((_) async => right(<TaskEntity>[]));
+      when(
         () => repository.updateTask(task),
       ).thenAnswer((_) async => right(unit));
 
       final result = await usecase(task);
 
       expect(result.isRight(), true);
+      verify(() => repository.getTasks(task.userId)).called(1);
       verify(() => repository.updateTask(task)).called(1);
     });
 
     test('returns left TaskException when update fails', () async {
+      when(
+        () => repository.getTasks(task.userId),
+      ).thenAnswer((_) async => right(<TaskEntity>[]));
       final exception = TaskException.taskUpdateFailed('err');
       when(
         () => repository.updateTask(task),
@@ -67,7 +74,28 @@ void main() {
 
       expect(result.isLeft(), true);
       expect(result.swap().getOrElse(() => throw ''), exception);
+      verify(() => repository.getTasks(task.userId)).called(1);
       verify(() => repository.updateTask(task)).called(1);
     });
+
+    test(
+      'returns left TaskAlreadyExists when a different task has same title',
+      () async {
+        final existingTask = makeTask(id: 'other', title: task.title);
+
+        when(
+          () => repository.getTasks(task.userId),
+        ).thenAnswer((_) async => right([existingTask]));
+
+        final result = await usecase(task);
+
+        expect(result.isLeft(), true);
+        final leftException = result.swap().getOrElse(() => throw '');
+        expect(leftException.code, 'TASK_ALREADY_EXISTS');
+        expect(leftException.message, contains(task.title));
+        verify(() => repository.getTasks(task.userId)).called(1);
+        verifyNever(() => repository.updateTask(task));
+      },
+    );
   });
 }

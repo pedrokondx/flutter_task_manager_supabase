@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_todo/features/task/data/dtos/task_dto.dart';
 
+import 'package:supabase_todo/features/task/presentation/cubit/task_cubit.dart';
 import 'package:supabase_todo/features/task/domain/entities/task_entity.dart';
 import 'package:supabase_todo/features/task/domain/entities/task_status.dart';
 import 'package:supabase_todo/core/domain/entities/category_entity.dart';
@@ -14,12 +15,11 @@ import 'package:supabase_todo/features/task/domain/usecases/update_task_usecase.
 import 'package:supabase_todo/features/task/domain/usecases/delete_task_usecase.dart';
 import 'package:supabase_todo/features/task/domain/usecases/get_tasks_usecase.dart';
 import 'package:supabase_todo/core/domain/usecases/get_categories_usecase.dart';
-import 'package:supabase_todo/features/task/presentation/cubit/task_cubit.dart';
 
-import '../../../../core/fakes.dart';
 import '../../../../core/mocks.dart';
-import '../../fakes.dart';
+import '../../../../core/fakes.dart';
 import '../../mocks.dart';
+import '../../fakes.dart';
 
 TaskEntity makeTask({
   String id = 't1',
@@ -94,35 +94,39 @@ void main() {
     blocTest<TaskCubit, TaskState>(
       'emits loading then populated on success',
       build: () {
-        when(() => getTasks(userId)).thenAnswer((_) async => right([task]));
         when(
-          () => getCategories(userId),
+          () => mockTaskRepository.getTasks(userId),
+        ).thenAnswer((_) async => right([task]));
+        when(
+          () => mockCategoryPreviewRepository.getCategories(userId),
         ).thenAnswer((_) async => right([category]));
         return cubit;
       },
-      act: (c) => cubit.load(userId),
+      act: (c) => c.load(userId),
       expect: () => [
         const TaskState(isLoading: true),
         TaskState(isLoading: false, tasks: [task], categories: [category]),
       ],
       verify: (_) {
-        verify(() => getTasks(userId)).called(1);
-        verify(() => getCategories(userId)).called(1);
+        verify(() => mockTaskRepository.getTasks(userId)).called(1);
+        verify(
+          () => mockCategoryPreviewRepository.getCategories(userId),
+        ).called(1);
       },
     );
 
     blocTest<TaskCubit, TaskState>(
       'emits error when getTasks fails',
       build: () {
-        when(() => getTasks(userId)).thenAnswer(
+        when(() => mockTaskRepository.getTasks(userId)).thenAnswer(
           (_) async => left(TaskException.taskRetrievalFailed('fail')),
         );
         when(
-          () => getCategories(userId),
+          () => mockCategoryPreviewRepository.getCategories(userId),
         ).thenAnswer((_) async => right([category]));
         return cubit;
       },
-      act: (c) => cubit.load(userId),
+      act: (c) => c.load(userId),
       expect: () => [
         const TaskState(isLoading: true),
         TaskState(isLoading: false, errorMessage: 'Task retrieval failed'),
@@ -132,13 +136,17 @@ void main() {
     blocTest<TaskCubit, TaskState>(
       'emits error when getCategories fails',
       build: () {
-        when(() => getTasks(userId)).thenAnswer((_) async => right([task]));
-        when(() => getCategories(userId)).thenAnswer(
+        when(
+          () => mockTaskRepository.getTasks(userId),
+        ).thenAnswer((_) async => right([task]));
+        when(
+          () => mockCategoryPreviewRepository.getCategories(userId),
+        ).thenAnswer(
           (_) async => left(CategoryException.getCategoriesFailure('err')),
         );
         return cubit;
       },
-      act: (c) => cubit.load(userId),
+      act: (c) => c.load(userId),
       expect: () => [
         const TaskState(isLoading: true),
         TaskState(isLoading: false, errorMessage: 'Failed to get categories'),
@@ -148,27 +156,39 @@ void main() {
 
   group('create', () {
     blocTest<TaskCubit, TaskState>(
-      'optimistically adds task and shows success message on success',
+      'adds task and shows success message on success',
       build: () {
-        when(() => createTask(task)).thenAnswer((_) async => right(unit));
+        when(
+          () => mockTaskRepository.getTasks(task.userId),
+        ).thenAnswer((_) async => right(<TaskEntity>[]));
+        when(
+          () => mockTaskRepository.createTask(task),
+        ).thenAnswer((_) async => right(unit));
         return cubit;
       },
       seed: () => const TaskState(),
       act: (c) => c.create(task),
       expect: () => [
-        TaskState(tasks: [task], isSaving: true),
+        TaskState(isSaving: true),
         TaskState(
           tasks: [task],
           isSaving: false,
           lastSuccessMessage: 'Task criada',
         ),
       ],
+      verify: (_) {
+        verify(() => mockTaskRepository.getTasks(task.userId)).called(1);
+        verify(() => mockTaskRepository.createTask(task)).called(1);
+      },
     );
 
     blocTest<TaskCubit, TaskState>(
-      'optimistically adds task and shows error on failure',
+      'shows error on generic creation failure',
       build: () {
-        when(() => createTask(task)).thenAnswer(
+        when(
+          () => mockTaskRepository.getTasks(task.userId),
+        ).thenAnswer((_) async => right(<TaskEntity>[]));
+        when(() => mockTaskRepository.createTask(task)).thenAnswer(
           (_) async => left(TaskException.taskCreationFailed('bad')),
         );
         return cubit;
@@ -176,13 +196,42 @@ void main() {
       seed: () => const TaskState(),
       act: (c) => c.create(task),
       expect: () => [
-        TaskState(tasks: [task], isSaving: true),
+        TaskState(isSaving: true),
         TaskState(
-          tasks: [task],
+          tasks: [],
           isSaving: false,
           errorMessage: 'Task creation failed',
         ),
       ],
+      verify: (_) {
+        verify(() => mockTaskRepository.getTasks(task.userId)).called(1);
+        verify(() => mockTaskRepository.createTask(task)).called(1);
+      },
+    );
+
+    blocTest<TaskCubit, TaskState>(
+      'shows error when duplicate title (TASK_ALREADY_EXISTS)',
+      build: () {
+        final existing = makeTask(id: 'other', title: task.title);
+        when(
+          () => mockTaskRepository.getTasks(task.userId),
+        ).thenAnswer((_) async => right([existing]));
+        return cubit;
+      },
+      seed: () => const TaskState(),
+      act: (c) => c.create(task),
+      expect: () => [
+        TaskState(isSaving: true),
+        TaskState(
+          tasks: [],
+          isSaving: false,
+          errorMessage: 'Task with name ${task.title} already exists',
+        ),
+      ],
+      verify: (_) {
+        verify(() => mockTaskRepository.getTasks(task.userId)).called(1);
+        verifyNever(() => mockTaskRepository.createTask(task));
+      },
     );
   });
 
@@ -192,47 +241,88 @@ void main() {
     ).copyWith(title: 'Changed Title').toEntity();
 
     blocTest<TaskCubit, TaskState>(
-      'optimistically updates task and shows success message',
+      'updates task and shows success message',
       build: () {
-        when(() => updateTask(updated)).thenAnswer((_) async => right(unit));
+        when(
+          () => mockTaskRepository.getTasks(updated.userId),
+        ).thenAnswer((_) async => right(<TaskEntity>[]));
+        when(
+          () => mockTaskRepository.updateTask(updated),
+        ).thenAnswer((_) async => right(unit));
         return cubit;
       },
       seed: () => TaskState(tasks: [task]),
       act: (c) => c.update(updated),
       expect: () => [
-        TaskState(tasks: [updated], isSaving: true),
+        TaskState(tasks: [task], isSaving: true),
         TaskState(
           tasks: [updated],
           isSaving: false,
           lastSuccessMessage: 'Task atualizada',
         ),
       ],
+      verify: (_) {
+        verify(() => mockTaskRepository.getTasks(updated.userId)).called(1);
+        verify(() => mockTaskRepository.updateTask(updated)).called(1);
+      },
     );
 
     blocTest<TaskCubit, TaskState>(
-      'optimistically updates task and shows error on failure',
+      'shows error on generic update failure',
       build: () {
         when(
-          () => updateTask(updated),
+          () => mockTaskRepository.getTasks(updated.userId),
+        ).thenAnswer((_) async => right(<TaskEntity>[]));
+        when(
+          () => mockTaskRepository.updateTask(updated),
         ).thenAnswer((_) async => left(TaskException.taskUpdateFailed('fail')));
         return cubit;
       },
       seed: () => TaskState(tasks: [task]),
       act: (c) => c.update(updated),
       expect: () => [
-        TaskState(tasks: [updated], isSaving: true),
+        TaskState(tasks: [task], isSaving: true),
         TaskState(
-          tasks: [updated],
+          tasks: [task],
           isSaving: false,
           errorMessage: 'Task update failed',
         ),
       ],
+      verify: (_) {
+        verify(() => mockTaskRepository.getTasks(updated.userId)).called(1);
+        verify(() => mockTaskRepository.updateTask(updated)).called(1);
+      },
+    );
+
+    blocTest<TaskCubit, TaskState>(
+      'shows error when duplicate title (TASK_ALREADY_EXISTS) on update',
+      build: () {
+        final existing = makeTask(id: 'other', title: updated.title);
+        when(
+          () => mockTaskRepository.getTasks(updated.userId),
+        ).thenAnswer((_) async => right([existing]));
+        return cubit;
+      },
+      seed: () => TaskState(tasks: [task]),
+      act: (c) => c.update(updated),
+      expect: () => [
+        TaskState(tasks: [task], isSaving: true),
+        TaskState(
+          tasks: [task],
+          isSaving: false,
+          errorMessage: 'Task with name ${updated.title} already exists',
+        ),
+      ],
+      verify: (_) {
+        verify(() => mockTaskRepository.getTasks(updated.userId)).called(1);
+        verifyNever(() => mockTaskRepository.updateTask(updated));
+      },
     );
   });
 
   group('delete', () {
     blocTest<TaskCubit, TaskState>(
-      'optimistically removes and shows success',
+      'removes and shows success',
       build: () {
         when(
           () => deleteTask(task.id, userId),
@@ -242,7 +332,7 @@ void main() {
       seed: () => TaskState(tasks: [task]),
       act: (c) => c.delete(task.id, userId),
       expect: () => [
-        TaskState(tasks: [], isDeleting: true),
+        TaskState(tasks: [task], isDeleting: true),
         TaskState(
           tasks: [],
           isDeleting: false,
@@ -252,7 +342,7 @@ void main() {
     );
 
     blocTest<TaskCubit, TaskState>(
-      'optimistically removes and shows error on failure (restores list except optimistic removal persists per implementation)',
+      'shows error when deletion fails',
       build: () {
         when(() => deleteTask(task.id, userId)).thenAnswer(
           (_) async => left(TaskException.taskDeletionFailed('oops')),
@@ -262,9 +352,9 @@ void main() {
       seed: () => TaskState(tasks: [task]),
       act: (c) => c.delete(task.id, userId),
       expect: () => [
-        TaskState(tasks: [], isDeleting: true),
+        TaskState(tasks: [task], isDeleting: true),
         TaskState(
-          tasks: [],
+          tasks: [task],
           isDeleting: false,
           errorMessage: 'Task deletion failed',
         ),
